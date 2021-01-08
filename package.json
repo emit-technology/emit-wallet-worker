@@ -1,0 +1,34 @@
+{
+  "name": "emit-wallet-worker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "jsuperzk": "file:../jsuperzk"
+  },
+  "devDependencies": {
+    "bip39": "^3.0.3",
+    "browserify": "^17.0.0",
+    "crypto": "^1.0.1",
+    "ethereumjs-tx": "^2.1.2",
+    "ethereumjs-wallet": "^1.0.1",
+    "gulp": "^4.0.2",
+    "gulp-clean": "^0.4.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "gulp-uglify": "^3.0.2",
+    "keccak256": "^1.0.2",
+    "randombytes": "^2.1.0",
+    "scrypt.js": "^0.3.0",
+    "tsify": "^5.0.2",
+    "typescript": "^4.1.2",
+    "uuid": "3.3.2",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

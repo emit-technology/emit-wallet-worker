@@ -1,0 +1,354 @@
+import {SeroWallet} from "./wallet/seroWallet";
+import EthWallet from "./wallet/ethWallet";
+import {AccountModel, ChainType, CreateType, Keystore, KeystoreWrapModel, Message, Method} from './types'
+import {accountCollection, keyStoreCollection} from './collection'
+import * as superzk from "jsuperzk/dist/protocol/account";
+import {createPkrHash} from 'jsuperzk/dist/wallet/wallet'
+import {IWallet} from "./wallet/wallet";
+import Wallet from "ethereumjs-wallet";
+import {toBuffer} from "jsuperzk/dist/utils/utils";
+
+const uuidv4 = require("uuid/v4");
+const randomBytes = require("randombytes");
+
+class Service {
+
+    constructor() {
+
+    }
+
+    execute = async (message: any): Promise<any> => {
+    }
+
+    generateMnemonic() {
+        return new SeroWallet().generateMnemonic();
+    }
+
+    async exportMnemonic(accountId: string, password: string): Promise<string> {
+        const rest: Array<KeystoreWrapModel> = await keyStoreCollection.find({
+            "accountId": accountId,
+            chainType: ChainType.SERO
+        });
+        if (rest && rest.length > 0) {
+            return await new EthWallet(rest[0].keystore).exportMnemonic(password);
+        }
+        return
+    }
+
+    async exportKeystore(accountId: string): Promise<string> {
+        const rest: any = await keyStoreCollection.find({"accountId": accountId});
+        if (!rest || rest.length == 0) {
+            return "";
+        } else {
+            const keystore: KeystoreWrapModel = rest[1];
+            return JSON.stringify(keystore.keystore)
+        }
+    }
+
+    async exportPrivateKey(accountId: string, password: string): Promise<string> {
+        const rest: Array<any> = await keyStoreCollection.find({"accountId": accountId, chainType: ChainType.ETH});
+        if (rest && rest.length > 0) {
+            const wallet = await Wallet.fromV3(rest[0].keystore, password)
+            return wallet.getPrivateKeyString()
+        }
+    }
+
+    async importPrivateKey(privateKey: string, password: string, name: string, passwordHint: string, avatar: string): Promise<string> {
+        try {
+            // const seroWallet = new SeroWallet()
+            // const ethWallet = new EthWallet()
+
+            const wallet = Wallet.fromPrivateKey(toBuffer(privateKey))
+            const ethKeystore: any = await wallet.toV3(password);
+
+            const seroKeystore: any = JSON.parse(JSON.stringify(ethKeystore));
+            const sk = superzk.seed2Sk(wallet.getPrivateKey(), 1);
+            const tk = superzk.sk2Tk(sk);
+            const address = createPkrHash(tk, 1, 1)
+            seroKeystore.tk = tk;
+            seroKeystore.address = address;
+
+            let accountId: string = uuidv4(randomBytes(16))
+
+            const seroKeystoreData: any = await keyStoreCollection.find({"address": seroKeystore.address});
+            const ethKeystoreData: any = await keyStoreCollection.find({"address": ethKeystore.address});
+
+            // console.log(seroKeystore,ethWallet,accountId,"importMnemonic");
+            const addressed: any = {};
+            addressed[ChainType.SERO] = seroKeystore.address;
+            addressed[ChainType.ETH] = "0x" + ethKeystore.address;
+
+            const seroData: KeystoreWrapModel = {
+                accountId: accountId,
+                address: seroKeystore.address,
+                chainType: ChainType.SERO,
+                keystore: seroKeystore,
+            }
+            const ethData: KeystoreWrapModel = {
+                accountId: accountId,
+                address: ethKeystore.address,
+                chainType: ChainType.ETH,
+                keystore: ethKeystore,
+            }
+            if (seroKeystoreData && seroKeystoreData.length > 0) {
+                const tmp: any = seroKeystoreData[0];
+                accountId = tmp.accountId;
+                console.log("sero tmp>", tmp);
+                tmp.keystore = seroData.keystore;
+                await keyStoreCollection.update(tmp)
+            } else {
+                await keyStoreCollection.insert(seroData)
+            }
+            if (ethKeystoreData && ethKeystoreData.length > 0) {
+                const tmp: any = ethKeystoreData[0];
+                console.log("eth tmp>", tmp);
+                tmp.keystore = ethData.keystore;
+                await keyStoreCollection.update(tmp)
+            } else {
+                await keyStoreCollection.insert(ethData)
+            }
+
+            const rest: any = await accountCollection.find({accountId: accountId})
+            if (rest && rest.length > 0) {
+                const tmp: any = rest[0];
+                tmp.name = name;
+                tmp.passwordHint = passwordHint;
+                tmp.avatar = avatar;
+                accountCollection.update(tmp).then().catch(e => {
+                    console.log(accountId)
+                })
+            } else {
+                accountCollection.insert({
+                    accountId: accountId,
+                    createType: CreateType.PrivateKey,
+                    name: name,
+                    passwordHint: passwordHint,
+                    avatar: avatar,
+                    addresses: addressed
+                }).then().catch(e => {
+                    console.log(accountId)
+                })
+            }
+            return new Promise((resolve, reject) => {
+                resolve(accountId)
+            })
+        } catch (e) {
+            console.error(e)
+            return new Promise((resolve, reject) => {
+                reject(e)
+            })
+        }
+    }
+
+    async accounts() {
+        return await accountCollection.findAll()
+    }
+
+    async accountInfo(accountId: string): Promise<AccountModel | undefined> {
+        const rest: any = await accountCollection.find({accountId: accountId});
+        if (rest && rest.length > 0) {
+            return rest[0]
+        }
+        return
+    }
+
+    async signTx(accountId: string, password: string, chainType: ChainType, params: any,chainParams?:any) {
+        const rest: any = await keyStoreCollection.find({"accountId": accountId, "chainType": ChainType.ETH})
+        if (!rest || rest.length == 0) {
+            return
+        }
+        const account: KeystoreWrapModel = rest[0];
+        switch (chainType) {
+            case ChainType.ETH:
+                const ethWallet: IWallet = new EthWallet(account.keystore)
+                return await ethWallet.buildSerializedTx(params, password,chainParams);
+            case ChainType.SERO:
+                const seroWallet: IWallet = new SeroWallet(account.keystore)
+                return await seroWallet.buildSerializedTx(params, password);
+            default:
+                break;
+        }
+        return
+    }
+
+    async importMnemonic(mnemonic: string, password: string, name: string, passwordHint: string, avatar: string) {
+        try {
+            const seroWallet = new SeroWallet()
+            const ethWallet = new EthWallet()
+            const ethKeystore: any = await ethWallet.importMnemonic(mnemonic, password);
+            const seroKeystore: Keystore = await seroWallet.importMnemonic(mnemonic, password);
+            let accountId: string = uuidv4(randomBytes(16))
+
+            const seroKeystoreData: any = await keyStoreCollection.find({"address": seroKeystore.address});
+            const ethKeystoreData: any = await keyStoreCollection.find({"address": ethKeystore.address});
+
+            console.log(seroKeystore, ethWallet, accountId, "importMnemonic");
+            const addressed: any = {};
+            addressed[ChainType.SERO] = seroKeystore.address;
+            addressed[ChainType.ETH] = "0x" + ethKeystore.address;
+
+            const seroData: KeystoreWrapModel = {
+                accountId: accountId,
+                address: seroKeystore.address,
+                chainType: ChainType.SERO,
+                keystore: seroKeystore,
+            }
+            const ethData: KeystoreWrapModel = {
+                accountId: accountId,
+                address: ethKeystore.address,
+                chainType: ChainType.ETH,
+                keystore: ethKeystore,
+            }
+            if (seroKeystoreData && seroKeystoreData.length > 0) {
+                const tmp: any = seroKeystoreData[0];
+                accountId = tmp.accountId;
+                console.log("sero tmp>", tmp);
+                tmp.keystore = seroData.keystore;
+                await keyStoreCollection.update(tmp)
+            } else {
+                await keyStoreCollection.insert(seroData)
+            }
+            if (ethKeystoreData && ethKeystoreData.length > 0) {
+                const tmp: any = ethKeystoreData[0];
+                console.log("eth tmp>", tmp);
+                tmp.keystore = ethData.keystore;
+                await keyStoreCollection.update(tmp)
+            } else {
+                await keyStoreCollection.insert(ethData)
+            }
+            const rest: any = await accountCollection.find({accountId: accountId})
+            if (rest && rest.length > 0) {
+                const tmp: any = rest[0];
+                tmp.name = name;
+                tmp.passwordHint = passwordHint;
+                tmp.avatar = avatar;
+                accountCollection.update(tmp).then().catch(e => {
+                    console.log(accountId)
+                })
+            } else {
+                accountCollection.insert({
+                    accountId: accountId,
+                    name: name,
+                    createType: CreateType.Mnemonic,
+                    passwordHint: passwordHint,
+                    avatar: avatar,
+                    addresses: addressed
+                }).then().catch(e => {
+                    console.log(accountId)
+                })
+            }
+            return new Promise((resolve, reject) => {
+                resolve(accountId)
+            })
+        } catch (e) {
+            return new Promise((resolve, reject) => {
+                reject(e)
+            })
+        }
+    }
+}
+
+const service = new Service();
+
+self.addEventListener('message', e => {
+
+    if (e && e.data && e.data.method) {
+        const message: Message = e.data;
+        switch (message.method) {
+            case Method.exportMnemonic:
+                service.exportMnemonic(message.data.accountId, message.data.password).then((rest: string) => {
+                    message.result = rest;
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break;
+            case Method.importMnemonic:
+                service.importMnemonic(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((rest: any) => {
+                    message.result = rest;
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    console.error(e)
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break;
+            case Method.signTx:
+                console.log("signTx begin..")
+                service.signTx(message.data.accountId, message.data.password, message.data.chainType, message.data.params,message.data.chainParams).then((rest: any) => {
+                    message.result = rest;
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    console.error(e)
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break;
+            case Method.generateMnemonic:
+                message.result = service.generateMnemonic()
+                sendMessage(message)
+                break;
+            case Method.getAccountInfo:
+                service.accountInfo(message.data.accountId).then((rest: any) => {
+                    message.result = rest
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break;
+            case Method.getAccountList:
+                service.accounts().then((rest: any) => {
+                    message.result = rest
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break;
+            case Method.exportKeystore:
+                service.exportKeystore(message.data.accountId).then((rest: any) => {
+                    message.result = rest
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break;
+            case Method.exportPrivateKey:
+                service.exportPrivateKey(message.data.accountId, message.data.password).then((rest: any) => {
+                    message.result = rest
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break
+            case Method.importPrivateKey:
+                service.importPrivateKey(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((rest: any) => {
+                    message.result = rest
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break
+            default:
+                service.execute(message).then((rest: any) => {
+                    message.result = rest
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break;
+        }
+    }
+})
+
+function sendMessage(message: Message): void {
+    console.log("send msg: ", message);
+    // @ts-ignore
+    self.postMessage(message)
+}
