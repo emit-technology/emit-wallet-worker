@@ -20,6 +20,7 @@ var ChainType;
     ChainType[ChainType["_"] = 0] = "_";
     ChainType[ChainType["SERO"] = 1] = "SERO";
     ChainType[ChainType["ETH"] = 2] = "ETH";
+    ChainType[ChainType["TRON"] = 3] = "TRON";
 })(ChainType = exports.ChainType || (exports.ChainType = {}));
 var CreateType;
 (function (CreateType) {

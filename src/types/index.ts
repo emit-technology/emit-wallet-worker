@@ -70,7 +70,8 @@ export enum Method {
 export enum ChainType {
     _,
     SERO,
-    ETH
+    ETH,
+    TRON
 }
 
 export interface AccountModel {
