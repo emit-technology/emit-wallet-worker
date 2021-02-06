@@ -6,7 +6,8 @@ import * as superzk from "jsuperzk/dist/protocol/account";
 import {createPkrHash} from 'jsuperzk/dist/wallet/wallet'
 import {IWallet} from "./wallet/wallet";
 import Wallet from "ethereumjs-wallet";
-import {toBuffer} from "jsuperzk/dist/utils/utils";
+import {toBuffer} from "jsuperzk/src/utils/utils";
+import TronWallet from "./wallet/tronWallet";
 
 const uuidv4 = require("uuid/v4");
 const randomBytes = require("randombytes");
@@ -93,7 +94,6 @@ class Service {
             if (seroKeystoreData && seroKeystoreData.length > 0) {
                 const tmp: any = seroKeystoreData[0];
                 accountId = tmp.accountId;
-                console.log("sero tmp>", tmp);
                 tmp.keystore = seroData.keystore;
                 await keyStoreCollection.update(tmp)
             } else {
@@ -101,7 +101,6 @@ class Service {
             }
             if (ethKeystoreData && ethKeystoreData.length > 0) {
                 const tmp: any = ethKeystoreData[0];
-                console.log("eth tmp>", tmp);
                 tmp.keystore = ethData.keystore;
                 await keyStoreCollection.update(tmp)
             } else {
@@ -115,7 +114,7 @@ class Service {
                 tmp.passwordHint = passwordHint;
                 tmp.avatar = avatar;
                 accountCollection.update(tmp).then().catch(e => {
-                    console.log(accountId)
+                    // console.log(accountId)
                 })
             } else {
                 accountCollection.insert({
@@ -153,9 +152,10 @@ class Service {
     }
 
     async signTx(accountId: string, password: string, chainType: ChainType, params: any,chainParams?:any) {
-        const rest: any = await keyStoreCollection.find({"accountId": accountId, "chainType": ChainType.ETH})
+        const chain = chainType == ChainType.SERO?ChainType.ETH:chainType;
+        let rest: any = await keyStoreCollection.find({"accountId": accountId, "chainType": chain})
         if (!rest || rest.length == 0) {
-            return
+            return Promise.reject("No keystore find.")
         }
         const account: KeystoreWrapModel = rest[0];
         switch (chainType) {
@@ -165,10 +165,14 @@ class Service {
             case ChainType.SERO:
                 const seroWallet: IWallet = new SeroWallet(account.keystore)
                 return await seroWallet.buildSerializedTx(params, password);
+            case ChainType.TRON:
+                const tronWallet: IWallet = new TronWallet(account.keystore)
+                const rest = await tronWallet.buildSerializedTx(params, password);
+                return Promise.resolve(rest);
             default:
                 break;
         }
-        return
+        return Promise.resolve();
     }
 
     async importMnemonic(mnemonic: string, password: string, name: string, passwordHint: string, avatar: string) {
@@ -182,7 +186,6 @@ class Service {
             const seroKeystoreData: any = await keyStoreCollection.find({"address": seroKeystore.address});
             const ethKeystoreData: any = await keyStoreCollection.find({"address": ethKeystore.address});
 
-            console.log(seroKeystore, ethWallet, accountId, "importMnemonic");
             const addressed: any = {};
             addressed[ChainType.SERO] = seroKeystore.address;
             addressed[ChainType.ETH] = "0x" + ethKeystore.address;
@@ -202,7 +205,6 @@ class Service {
             if (seroKeystoreData && seroKeystoreData.length > 0) {
                 const tmp: any = seroKeystoreData[0];
                 accountId = tmp.accountId;
-                console.log("sero tmp>", tmp);
                 tmp.keystore = seroData.keystore;
                 await keyStoreCollection.update(tmp)
             } else {
@@ -210,7 +212,6 @@ class Service {
             }
             if (ethKeystoreData && ethKeystoreData.length > 0) {
                 const tmp: any = ethKeystoreData[0];
-                console.log("eth tmp>", tmp);
                 tmp.keystore = ethData.keystore;
                 await keyStoreCollection.update(tmp)
             } else {
@@ -246,6 +247,49 @@ class Service {
             })
         }
     }
+
+    async genNewWallet(accountId:string,password:string,chainType:ChainType){
+        const rest: any = await keyStoreCollection.find({"accountId": accountId, "chainType": chainType})
+        if (rest && rest.length > 0) {
+            return Promise.reject(`Chain:${ChainType[chainType]} is exist!`)
+        }
+        const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
+            accountId: accountId,
+            chainType: ChainType.SERO
+        });
+        let mnemonic = "";
+        if (restSero && restSero.length > 0) {
+            mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
+        }
+        if(!mnemonic){
+            return Promise.reject(`No available keystore`)
+        }
+        // const mnemonic = await this.exportMnemonic(accountId,password);
+        if(chainType == ChainType.TRON){
+            const wallet:IWallet  = new TronWallet()
+            const keystore = await wallet.importMnemonic(mnemonic,password);
+            const rest: Array<AccountModel> = await accountCollection.find({
+                accountId: accountId
+            });
+            if(!rest || rest.length ==0){
+                return Promise.reject(`No available account`)
+            }
+            const account = rest[0];
+            const addresses = account.addresses;
+            addresses[chainType] = keystore.address;
+            account.addresses = addresses;
+            await accountCollection.update(account)
+
+            const data: KeystoreWrapModel = {
+                accountId: accountId,
+                address: keystore.address,
+                chainType: ChainType.TRON,
+                keystore: keystore,
+            }
+
+            await keyStoreCollection.insert(data)
+        }
+    }
 }
 
 const service = new Service();
@@ -275,7 +319,6 @@ self.addEventListener('message', e => {
                 })
                 break;
             case Method.signTx:
-                console.log("signTx begin..")
                 service.signTx(message.data.accountId, message.data.password, message.data.chainType, message.data.params,message.data.chainParams).then((rest: any) => {
                     message.result = rest;
                     sendMessage(message)
@@ -334,6 +377,15 @@ self.addEventListener('message', e => {
                     sendMessage(message)
                 })
                 break
+            case Method.genNewWallet:
+                service.genNewWallet(message.data.accountId, message.data.password,message.data.chainType).then((rest: any) => {
+                    message.result = rest
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break
             default:
                 service.execute(message).then((rest: any) => {
                     message.result = rest
@@ -348,7 +400,7 @@ self.addEventListener('message', e => {
 })
 
 function sendMessage(message: Message): void {
-    console.log("send msg: ", message);
+    // console.log("send msg: ", message);
     // @ts-ignore
     self.postMessage(message)
 }

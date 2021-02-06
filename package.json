@@ -4,7 +4,9 @@
   "description": "",
   "main": "./src/index.ts",
   "dependencies": {
-    "jsuperzk": "file:../jsuperzk"
+    "jsuperzk": "file:../jsuperzk",
+    "tron-lib": "file:../tron-lib",
+    "tronweb": "^3.2.3"
   },
   "devDependencies": {
     "bip39": "^3.0.3",

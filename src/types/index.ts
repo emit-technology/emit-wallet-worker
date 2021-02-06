@@ -65,6 +65,7 @@ export enum Method {
     execute,
     exportPrivateKey,
     importPrivateKey,
+    genNewWallet
 }
 
 export enum ChainType {
@@ -92,7 +93,8 @@ export interface KeystoreWrapModel {
 
 export enum CreateType{
     Mnemonic,
-    PrivateKey
+    PrivateKey,
+    Generate
 }
 
 // export interface Transaction {

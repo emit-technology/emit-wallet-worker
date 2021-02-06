@@ -86,6 +86,11 @@ class Index {
         let message: any = {method: method, data: data}
         this.handlerMsg(message, cb);
     }
+
+    genNewWallet(data: any, cb) {
+        let message: any = {method: Method.genNewWallet, data: data}
+        this.handlerMsg(message, cb);
+    }
 }
 
 interface importMnemonicProps {

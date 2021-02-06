@@ -14,6 +14,7 @@ var Method;
     Method[Method["execute"] = 8] = "execute";
     Method[Method["exportPrivateKey"] = 9] = "exportPrivateKey";
     Method[Method["importPrivateKey"] = 10] = "importPrivateKey";
+    Method[Method["genNewWallet"] = 11] = "genNewWallet";
 })(Method = exports.Method || (exports.Method = {}));
 var ChainType;
 (function (ChainType) {
@@ -26,6 +27,7 @@ var CreateType;
 (function (CreateType) {
     CreateType[CreateType["Mnemonic"] = 0] = "Mnemonic";
     CreateType[CreateType["PrivateKey"] = 1] = "PrivateKey";
+    CreateType[CreateType["Generate"] = 2] = "Generate";
 })(CreateType = exports.CreateType || (exports.CreateType = {}));
 // export interface Transaction {
 //     chain: ChainType

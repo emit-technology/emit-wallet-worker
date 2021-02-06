@@ -43,7 +43,8 @@ var collection_1 = require("./collection");
 var superzk = require("jsuperzk/dist/protocol/account");
 var wallet_1 = require("jsuperzk/dist/wallet/wallet");
 var ethereumjs_wallet_1 = require("ethereumjs-wallet");
-var utils_1 = require("jsuperzk/dist/utils/utils");
+var utils_1 = require("jsuperzk/src/utils/utils");
+var tronWallet_1 = require("./wallet/tronWallet");
 var uuidv4 = require("uuid/v4");
 var randomBytes = require("randombytes");
 var Service = /** @class */ (function () {
@@ -157,7 +158,6 @@ var Service = /** @class */ (function () {
                         if (!(seroKeystoreData && seroKeystoreData.length > 0)) return [3 /*break*/, 5];
                         tmp = seroKeystoreData[0];
                         accountId_1 = tmp.accountId;
-                        console.log("sero tmp>", tmp);
                         tmp.keystore = seroData.keystore;
                         return [4 /*yield*/, collection_1.keyStoreCollection.update(tmp)];
                     case 4:
@@ -170,7 +170,6 @@ var Service = /** @class */ (function () {
                     case 7:
                         if (!(ethKeystoreData && ethKeystoreData.length > 0)) return [3 /*break*/, 9];
                         tmp = ethKeystoreData[0];
-                        console.log("eth tmp>", tmp);
                         tmp.keystore = ethData.keystore;
                         return [4 /*yield*/, collection_1.keyStoreCollection.update(tmp)];
                     case 8:
@@ -189,7 +188,7 @@ var Service = /** @class */ (function () {
                             tmp.passwordHint = passwordHint;
                             tmp.avatar = avatar;
                             collection_1.accountCollection.update(tmp).then().catch(function (e) {
-                                console.log(accountId_1);
+                                // console.log(accountId)
                             });
                         }
                         else {
@@ -246,22 +245,25 @@ var Service = /** @class */ (function () {
     };
     Service.prototype.signTx = function (accountId, password, chainType, params, chainParams) {
         return __awaiter(this, void 0, void 0, function () {
-            var rest, account, _a, ethWallet, seroWallet;
+            var chain, rest, account, _a, ethWallet, seroWallet, tronWallet, rest_1;
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, collection_1.keyStoreCollection.find({ "accountId": accountId, "chainType": types_1.ChainType.ETH })];
+                    case 0:
+                        chain = chainType == types_1.ChainType.SERO ? types_1.ChainType.ETH : chainType;
+                        return [4 /*yield*/, collection_1.keyStoreCollection.find({ "accountId": accountId, "chainType": chain })];
                     case 1:
                         rest = _b.sent();
                         if (!rest || rest.length == 0) {
-                            return [2 /*return*/];
+                            return [2 /*return*/, Promise.reject("No keystore find.")];
                         }
                         account = rest[0];
                         _a = chainType;
                         switch (_a) {
                             case types_1.ChainType.ETH: return [3 /*break*/, 2];
                             case types_1.ChainType.SERO: return [3 /*break*/, 4];
+                            case types_1.ChainType.TRON: return [3 /*break*/, 6];
                         }
-                        return [3 /*break*/, 6];
+                        return [3 /*break*/, 8];
                     case 2:
                         ethWallet = new ethWallet_1.default(account.keystore);
                         return [4 /*yield*/, ethWallet.buildSerializedTx(params, password, chainParams)];
@@ -270,8 +272,14 @@ var Service = /** @class */ (function () {
                         seroWallet = new seroWallet_1.SeroWallet(account.keystore);
                         return [4 /*yield*/, seroWallet.buildSerializedTx(params, password)];
                     case 5: return [2 /*return*/, _b.sent()];
-                    case 6: return [3 /*break*/, 7];
-                    case 7: return [2 /*return*/];
+                    case 6:
+                        tronWallet = new tronWallet_1.default(account.keystore);
+                        return [4 /*yield*/, tronWallet.buildSerializedTx(params, password)];
+                    case 7:
+                        rest_1 = _b.sent();
+                        return [2 /*return*/, Promise.resolve(rest_1)];
+                    case 8: return [3 /*break*/, 9];
+                    case 9: return [2 /*return*/, Promise.resolve()];
                 }
             });
         });
@@ -298,7 +306,6 @@ var Service = /** @class */ (function () {
                         return [4 /*yield*/, collection_1.keyStoreCollection.find({ "address": ethKeystore.address })];
                     case 4:
                         ethKeystoreData = _a.sent();
-                        console.log(seroKeystore, ethWallet, accountId_2, "importMnemonic");
                         addressed = {};
                         addressed[types_1.ChainType.SERO] = seroKeystore.address;
                         addressed[types_1.ChainType.ETH] = "0x" + ethKeystore.address;
@@ -317,7 +324,6 @@ var Service = /** @class */ (function () {
                         if (!(seroKeystoreData && seroKeystoreData.length > 0)) return [3 /*break*/, 6];
                         tmp = seroKeystoreData[0];
                         accountId_2 = tmp.accountId;
-                        console.log("sero tmp>", tmp);
                         tmp.keystore = seroData.keystore;
                         return [4 /*yield*/, collection_1.keyStoreCollection.update(tmp)];
                     case 5:
@@ -330,7 +336,6 @@ var Service = /** @class */ (function () {
                     case 8:
                         if (!(ethKeystoreData && ethKeystoreData.length > 0)) return [3 /*break*/, 10];
                         tmp = ethKeystoreData[0];
-                        console.log("eth tmp>", tmp);
                         tmp.keystore = ethData.keystore;
                         return [4 /*yield*/, collection_1.keyStoreCollection.update(tmp)];
                     case 9:
@@ -377,6 +382,68 @@ var Service = /** @class */ (function () {
             });
         });
     };
+    Service.prototype.genNewWallet = function (accountId, password, chainType) {
+        return __awaiter(this, void 0, void 0, function () {
+            var rest, restSero, mnemonic, wallet, keystore, rest_2, account, addresses, data;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, collection_1.keyStoreCollection.find({ "accountId": accountId, "chainType": chainType })];
+                    case 1:
+                        rest = _a.sent();
+                        if (rest && rest.length > 0) {
+                            return [2 /*return*/, Promise.reject("Chain:" + types_1.ChainType[chainType] + " is exist!")];
+                        }
+                        return [4 /*yield*/, collection_1.keyStoreCollection.find({
+                                accountId: accountId,
+                                chainType: types_1.ChainType.SERO
+                            })];
+                    case 2:
+                        restSero = _a.sent();
+                        mnemonic = "";
+                        if (!(restSero && restSero.length > 0)) return [3 /*break*/, 4];
+                        return [4 /*yield*/, new ethWallet_1.default(restSero[0].keystore).exportMnemonic(password)];
+                    case 3:
+                        mnemonic = _a.sent();
+                        _a.label = 4;
+                    case 4:
+                        if (!mnemonic) {
+                            return [2 /*return*/, Promise.reject("No available keystore")];
+                        }
+                        if (!(chainType == types_1.ChainType.TRON)) return [3 /*break*/, 9];
+                        wallet = new tronWallet_1.default();
+                        return [4 /*yield*/, wallet.importMnemonic(mnemonic, password)];
+                    case 5:
+                        keystore = _a.sent();
+                        return [4 /*yield*/, collection_1.accountCollection.find({
+                                accountId: accountId
+                            })];
+                    case 6:
+                        rest_2 = _a.sent();
+                        if (!rest_2 || rest_2.length == 0) {
+                            return [2 /*return*/, Promise.reject("No available account")];
+                        }
+                        account = rest_2[0];
+                        addresses = account.addresses;
+                        addresses[chainType] = keystore.address;
+                        account.addresses = addresses;
+                        return [4 /*yield*/, collection_1.accountCollection.update(account)];
+                    case 7:
+                        _a.sent();
+                        data = {
+                            accountId: accountId,
+                            address: keystore.address,
+                            chainType: types_1.ChainType.TRON,
+                            keystore: keystore,
+                        };
+                        return [4 /*yield*/, collection_1.keyStoreCollection.insert(data)];
+                    case 8:
+                        _a.sent();
+                        _a.label = 9;
+                    case 9: return [2 /*return*/];
+                }
+            });
+        });
+    };
     return Service;
 }());
 var service = new Service();
@@ -404,7 +471,6 @@ self.addEventListener('message', function (e) {
                 });
                 break;
             case types_1.Method.signTx:
-                console.log("signTx begin..");
                 service.signTx(message_1.data.accountId, message_1.data.password, message_1.data.chainType, message_1.data.params, message_1.data.chainParams).then(function (rest) {
                     message_1.result = rest;
                     sendMessage(message_1);
@@ -463,6 +529,15 @@ self.addEventListener('message', function (e) {
                     sendMessage(message_1);
                 });
                 break;
+            case types_1.Method.genNewWallet:
+                service.genNewWallet(message_1.data.accountId, message_1.data.password, message_1.data.chainType).then(function (rest) {
+                    message_1.result = rest;
+                    sendMessage(message_1);
+                }).catch(function (e) {
+                    message_1.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message_1);
+                });
+                break;
             default:
                 service.execute(message_1).then(function (rest) {
                     message_1.result = rest;
@@ -476,7 +551,7 @@ self.addEventListener('message', function (e) {
     }
 });
 function sendMessage(message) {
-    console.log("send msg: ", message);
+    // console.log("send msg: ", message);
     // @ts-ignore
     self.postMessage(message);
 }

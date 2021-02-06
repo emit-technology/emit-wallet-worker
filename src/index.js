@@ -71,6 +71,10 @@ var Index = /** @class */ (function () {
         var message = { method: method, data: data };
         this.handlerMsg(message, cb);
     };
+    Index.prototype.genNewWallet = function (data, cb) {
+        var message = { method: types_1.Method.genNewWallet, data: data };
+        this.handlerMsg(message, cb);
+    };
     return Index;
 }());
 var service = new Index();
