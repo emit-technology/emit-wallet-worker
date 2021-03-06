@@ -8,6 +8,7 @@ import {IWallet} from "./wallet/wallet";
 import Wallet from "ethereumjs-wallet";
 import {toBuffer} from "jsuperzk/src/utils/utils";
 import TronWallet from "./wallet/tronWallet";
+import {getBase58CheckAddress, genPriKey,hexStr2byteArray, getAddressFromPriKey} from "tron-lib/src/utils/crypto"
 
 const uuidv4 = require("uuid/v4");
 const randomBytes = require("randombytes");
@@ -253,21 +254,33 @@ class Service {
         if (rest && rest.length > 0) {
             return Promise.reject(`Chain:${ChainType[chainType]} is exist!`)
         }
-        const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
-            accountId: accountId,
-            chainType: ChainType.SERO
-        });
-        let mnemonic = "";
-        if (restSero && restSero.length > 0) {
-            mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
+        const accountInfo = await this.accountInfo(accountId);
+        let keystore:any = {};
+        if(accountInfo.createType == CreateType.PrivateKey){
+            const privateKey = await this.exportPrivateKey(accountId,password)
+            const privateKeyBytes = toBuffer(privateKey);
+            const wallet = Wallet.fromPrivateKey(privateKeyBytes)
+            keystore = await wallet.toV3(password);
+            keystore.address = getBase58CheckAddress(getAddressFromPriKey(privateKeyBytes));
+
+        }else if(accountInfo.createType == CreateType.Mnemonic){
+            const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
+                accountId: accountId,
+                chainType: ChainType.SERO
+            });
+            let mnemonic = "";
+            if (restSero && restSero.length > 0) {
+                mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
+            }
+            if(!mnemonic){
+                return Promise.reject(`No available keystore`)
+            }
+            const wallet:IWallet  = new TronWallet()
+            keystore = await wallet.importMnemonic(mnemonic,password);
         }
-        if(!mnemonic){
-            return Promise.reject(`No available keystore`)
-        }
+
         // const mnemonic = await this.exportMnemonic(accountId,password);
         if(chainType == ChainType.TRON){
-            const wallet:IWallet  = new TronWallet()
-            const keystore = await wallet.importMnemonic(mnemonic,password);
             const rest: Array<AccountModel> = await accountCollection.find({
                 accountId: accountId
             });
@@ -382,6 +395,7 @@ self.addEventListener('message', e => {
                     message.result = rest
                     sendMessage(message)
                 }).catch((e: any) => {
+                    console.error(e)
                     message.error = typeof e == "string" ? e : e.message;
                     sendMessage(message)
                 })
@@ -400,7 +414,7 @@ self.addEventListener('message', e => {
 })
 
 function sendMessage(message: Message): void {
-    // console.log("send msg: ", message);
+    console.log("send msg: ", message);
     // @ts-ignore
     self.postMessage(message)
 }

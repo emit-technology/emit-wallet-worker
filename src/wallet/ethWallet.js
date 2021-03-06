@@ -68,11 +68,12 @@ var EthWallet = /** @class */ (function (_super) {
                         throw new Error("keystore undefined!");
                     case 1: return [4 /*yield*/, ethereumjs_wallet_2.default.fromV3(this.keystore, password)
                         // const walletEth = hdkey.fromMasterSeed(wallet.getPrivateKey())
+                        // console.log("wallet.getPrivateKey()",wallet.getPrivateKeyString())
                     ];
                     case 2:
                         wallet = _a.sent();
                         // const walletEth = hdkey.fromMasterSeed(wallet.getPrivateKey())
-                        console.log("wallet.getPrivateKey()", wallet.getPrivateKeyString());
+                        // console.log("wallet.getPrivateKey()",wallet.getPrivateKeyString())
                         return [2 /*return*/, bip39.entropyToMnemonic(wallet.getPrivateKey().slice(0, 16))];
                 }
             });

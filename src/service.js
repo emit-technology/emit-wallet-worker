@@ -45,6 +45,7 @@ var wallet_1 = require("jsuperzk/dist/wallet/wallet");
 var ethereumjs_wallet_1 = require("ethereumjs-wallet");
 var utils_1 = require("jsuperzk/src/utils/utils");
 var tronWallet_1 = require("./wallet/tronWallet");
+var crypto_1 = require("tron-lib/src/utils/crypto");
 var uuidv4 = require("uuid/v4");
 var randomBytes = require("randombytes");
 var Service = /** @class */ (function () {
@@ -384,7 +385,7 @@ var Service = /** @class */ (function () {
     };
     Service.prototype.genNewWallet = function (accountId, password, chainType) {
         return __awaiter(this, void 0, void 0, function () {
-            var rest, restSero, mnemonic, wallet, keystore, rest_2, account, addresses, data;
+            var rest, accountInfo, keystore, privateKey, privateKeyBytes, wallet, restSero, mnemonic, wallet, rest_2, account, addresses, data;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, collection_1.keyStoreCollection.find({ "accountId": accountId, "chainType": chainType })];
@@ -393,31 +394,50 @@ var Service = /** @class */ (function () {
                         if (rest && rest.length > 0) {
                             return [2 /*return*/, Promise.reject("Chain:" + types_1.ChainType[chainType] + " is exist!")];
                         }
+                        return [4 /*yield*/, this.accountInfo(accountId)];
+                    case 2:
+                        accountInfo = _a.sent();
+                        keystore = {};
+                        if (!(accountInfo.createType == types_1.CreateType.PrivateKey)) return [3 /*break*/, 5];
+                        return [4 /*yield*/, this.exportPrivateKey(accountId, password)];
+                    case 3:
+                        privateKey = _a.sent();
+                        privateKeyBytes = utils_1.toBuffer(privateKey);
+                        wallet = ethereumjs_wallet_1.default.fromPrivateKey(privateKeyBytes);
+                        return [4 /*yield*/, wallet.toV3(password)];
+                    case 4:
+                        keystore = _a.sent();
+                        keystore.address = crypto_1.getBase58CheckAddress(crypto_1.getAddressFromPriKey(privateKeyBytes));
+                        return [3 /*break*/, 10];
+                    case 5:
+                        if (!(accountInfo.createType == types_1.CreateType.Mnemonic)) return [3 /*break*/, 10];
                         return [4 /*yield*/, collection_1.keyStoreCollection.find({
                                 accountId: accountId,
                                 chainType: types_1.ChainType.SERO
                             })];
-                    case 2:
+                    case 6:
                         restSero = _a.sent();
                         mnemonic = "";
-                        if (!(restSero && restSero.length > 0)) return [3 /*break*/, 4];
+                        if (!(restSero && restSero.length > 0)) return [3 /*break*/, 8];
                         return [4 /*yield*/, new ethWallet_1.default(restSero[0].keystore).exportMnemonic(password)];
-                    case 3:
+                    case 7:
                         mnemonic = _a.sent();
-                        _a.label = 4;
-                    case 4:
+                        _a.label = 8;
+                    case 8:
                         if (!mnemonic) {
                             return [2 /*return*/, Promise.reject("No available keystore")];
                         }
-                        if (!(chainType == types_1.ChainType.TRON)) return [3 /*break*/, 9];
                         wallet = new tronWallet_1.default();
                         return [4 /*yield*/, wallet.importMnemonic(mnemonic, password)];
-                    case 5:
+                    case 9:
                         keystore = _a.sent();
+                        _a.label = 10;
+                    case 10:
+                        if (!(chainType == types_1.ChainType.TRON)) return [3 /*break*/, 14];
                         return [4 /*yield*/, collection_1.accountCollection.find({
                                 accountId: accountId
                             })];
-                    case 6:
+                    case 11:
                         rest_2 = _a.sent();
                         if (!rest_2 || rest_2.length == 0) {
                             return [2 /*return*/, Promise.reject("No available account")];
@@ -427,7 +447,7 @@ var Service = /** @class */ (function () {
                         addresses[chainType] = keystore.address;
                         account.addresses = addresses;
                         return [4 /*yield*/, collection_1.accountCollection.update(account)];
-                    case 7:
+                    case 12:
                         _a.sent();
                         data = {
                             accountId: accountId,
@@ -436,10 +456,10 @@ var Service = /** @class */ (function () {
                             keystore: keystore,
                         };
                         return [4 /*yield*/, collection_1.keyStoreCollection.insert(data)];
-                    case 8:
+                    case 13:
                         _a.sent();
-                        _a.label = 9;
-                    case 9: return [2 /*return*/];
+                        _a.label = 14;
+                    case 14: return [2 /*return*/];
                 }
             });
         });
@@ -534,6 +554,7 @@ self.addEventListener('message', function (e) {
                     message_1.result = rest;
                     sendMessage(message_1);
                 }).catch(function (e) {
+                    console.error(e);
                     message_1.error = typeof e == "string" ? e : e.message;
                     sendMessage(message_1);
                 });
@@ -551,7 +572,7 @@ self.addEventListener('message', function (e) {
     }
 });
 function sendMessage(message) {
-    // console.log("send msg: ", message);
+    console.log("send msg: ", message);
     // @ts-ignore
     self.postMessage(message);
 }

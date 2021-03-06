@@ -48,7 +48,7 @@ class EthWallet extends IWallet{
         }else{
             const wallet = await Wallet.fromV3(this.keystore,password)
             // const walletEth = hdkey.fromMasterSeed(wallet.getPrivateKey())
-            console.log("wallet.getPrivateKey()",wallet.getPrivateKeyString())
+            // console.log("wallet.getPrivateKey()",wallet.getPrivateKeyString())
             return bip39.entropyToMnemonic(wallet.getPrivateKey().slice(0,16));
         }
     }
