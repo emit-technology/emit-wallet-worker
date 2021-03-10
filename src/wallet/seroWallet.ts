@@ -2,13 +2,12 @@ import {Keystore,TxParams} from '../types';
 import {toBuffer} from "jsuperzk/dist/utils/utils";
 import {createPkrHash} from 'jsuperzk/dist/wallet/wallet'
 import * as superzk from "jsuperzk/dist/protocol/account";
-import {IWallet} from "./wallet";
+import {IWallet, walletEx} from "./wallet";
 import {signTx} from "jsuperzk/dist/tx/tx";
-import EthWallet from "./ethWallet";
 import Wallet, {hdkey} from "ethereumjs-wallet";
 
 const bip39 = require("bip39");
-
+const version = 1;
 export class SeroWallet extends IWallet{
 
     protected keystore:any | undefined;
@@ -18,8 +17,26 @@ export class SeroWallet extends IWallet{
         this.keystore = keystore;
     }
 
+    getWallet = async (): Promise<Wallet> => {
+        return new Promise(((resolve, reject) => {
+            const signKey = walletEx.getSignKey();
+            if(!signKey){
+                reject("wallet was unlock!")
+            }
+            if(signKey && signKey.split(" ").length == 12){
+                const seedBuffer = bip39.mnemonicToSeedSync(signKey)
+                const walletEth = hdkey.fromMasterSeed(seedBuffer)
+                const acct = walletEth.derivePath(`m/44'/60'/0'/0/0`)
+                resolve(acct.getWallet())
+            }else{
+                resolve(Wallet.fromPrivateKey(toBuffer(signKey)))
+            }
+        }))
+    }
+
     async buildSerializedTx(txParams: any, password: string): Promise<any> {
-        return signTx(await this.getSK(password), txParams)
+        const wallet = await this.getWallet();
+        return signTx(superzk.seed2Sk(wallet.getPrivateKey(), version), txParams)
     }
 
     async getSK(password:string){
@@ -41,8 +58,6 @@ export class SeroWallet extends IWallet{
     }
 
     importMnemonic = async (mnemonic: string, password: string, keystore?:any,blockNumber?: number): Promise<Keystore> => {
-        const version = 1;
-
         const seedB = bip39.mnemonicToSeedSync(mnemonic)
         const walletEth = hdkey.fromMasterSeed(seedB)
         const acct = walletEth.derivePath(`m/44'/60'/0'/0/0`)

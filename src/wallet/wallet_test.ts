@@ -27,8 +27,6 @@ const bip39 = require("bip39");
 
 // test ethereum wallet
 
-const begin:number = Date.now();
-
 let ethWallet:IWallet = new EthWallet()
 // const ethMnemonic:string = ethWallet.generateMnemonic()
 
@@ -44,10 +42,12 @@ console.log(ethMnemonic,"ethMnemonic")
 //
 // })
 
+const begin = Date.now();
 const seedBuffer = bip39.mnemonicToSeedSync(ethMnemonic)
 const walletEth = hdkey.fromMasterSeed(seedBuffer)
 const acct = walletEth.derivePath(`m/44'/195'/1'/0/0`)
-console.log(acct.getWallet().getPrivateKeyString(),"privateKey");
+const end = Date.now();
+console.log(acct.getWallet().getPrivateKeyString(),"privateKey cost:",end-begin);
 
 //0xdcf96f66f03ed0b89ed67ac92bc9161bd94956d37c4675a8907785927d1b44b0
 // TKeifc3ocx7asvJFJRfR6tNsosqJeuGLhh

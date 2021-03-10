@@ -1,4 +1,4 @@
-import {IWallet} from "./wallet";
+import {IWallet, walletEx} from "./wallet";
 import {Keystore, TxParams} from "../types";
 import utils, {toBuffer} from "jsuperzk/src/utils/utils";
 import {hdkey,thirdparty} from 'ethereumjs-wallet';
@@ -18,25 +18,39 @@ class EthWallet extends IWallet{
         this.keystore = keystore;
     }
 
+
+    getWallet = async (): Promise<Wallet> => {
+        return new Promise(((resolve, reject) => {
+            const signKey = walletEx.getSignKey();
+            if(!signKey){
+                reject("wallet was unlock!")
+            }
+            if(signKey && signKey.split(" ").length == 12){
+                const seedBuffer = bip39.mnemonicToSeedSync(signKey)
+                const walletEth = hdkey.fromMasterSeed(seedBuffer)
+                const acct = walletEth.derivePath(`m/44'/60'/0'/0/0`)
+                resolve(acct.getWallet())
+            }else{
+                resolve(Wallet.fromPrivateKey(toBuffer(signKey)))
+            }
+        }))
+    }
+
     async buildSerializedTx(txParams:TxParams,password:string,chainParams?:any):Promise<any> {
         if(this.keystore){
             // @ts-ignore
-            const wallet = await Wallet.fromV3(this.keystore,password)
+            // const wallet = await Wallet.fromV3(this.keystore,password)
 
             const customCommon = Common.forCustomChain(
                 chainParams.baseChain,
                 chainParams.customer,
                 chainParams.hardfork
             )
+            const wallet = await this.getWallet();
             const tx = new EthereumTx(txParams,{common:customCommon})
-            console.debug(tx,"tx1")
-
             tx.sign(wallet.getPrivateKey())
-            console.debug(tx,"tx2")
 
             const serializedTx = tx.serialize()
-            console.debug(serializedTx,"serializedTx")
-
             return serializedTx.toString("hex");
         }
         return

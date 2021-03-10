@@ -91,6 +91,16 @@ class Index {
         let message: any = {method: Method.genNewWallet, data: data}
         this.handlerMsg(message, cb);
     }
+
+    unlockWallet(accountId: string, password: string, cb:any){
+        let message: any = {method: Method.unlockWallet, data: {accountId: accountId, password: password}}
+        this.handlerMsg(message, cb);
+    }
+
+    isLocked(cb){
+        let message: any = {method: Method.isLocked, data: {}}
+        this.handlerMsg(message, cb);
+    }
 }
 
 interface importMnemonicProps {
@@ -103,4 +113,3 @@ interface importMnemonicProps {
 
 const service: Index = new Index();
 export default service;
-

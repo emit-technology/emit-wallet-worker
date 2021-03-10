@@ -15,6 +15,8 @@ var Method;
     Method[Method["exportPrivateKey"] = 9] = "exportPrivateKey";
     Method[Method["importPrivateKey"] = 10] = "importPrivateKey";
     Method[Method["genNewWallet"] = 11] = "genNewWallet";
+    Method[Method["unlockWallet"] = 12] = "unlockWallet";
+    Method[Method["isLocked"] = 13] = "isLocked";
 })(Method = exports.Method || (exports.Method = {}));
 var ChainType;
 (function (ChainType) {

@@ -57,16 +57,35 @@ var wallet_2 = require("./wallet");
 var tx_1 = require("jsuperzk/dist/tx/tx");
 var ethereumjs_wallet_1 = require("ethereumjs-wallet");
 var bip39 = require("bip39");
+var version = 1;
 var SeroWallet = /** @class */ (function (_super) {
     __extends(SeroWallet, _super);
     function SeroWallet(keystore) {
         var _this = _super.call(this) || this;
+        _this.getWallet = function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, new Promise((function (resolve, reject) {
+                        var signKey = wallet_2.walletEx.getSignKey();
+                        if (!signKey) {
+                            reject("wallet was unlock!");
+                        }
+                        if (signKey && signKey.split(" ").length == 12) {
+                            var seedBuffer = bip39.mnemonicToSeedSync(signKey);
+                            var walletEth = ethereumjs_wallet_1.hdkey.fromMasterSeed(seedBuffer);
+                            var acct = walletEth.derivePath("m/44'/60'/0'/0/0");
+                            resolve(acct.getWallet());
+                        }
+                        else {
+                            resolve(ethereumjs_wallet_1.default.fromPrivateKey(utils_1.toBuffer(signKey)));
+                        }
+                    }))];
+            });
+        }); };
         _this.importMnemonic = function (mnemonic, password, keystore, blockNumber) { return __awaiter(_this, void 0, void 0, function () {
-            var version, seedB, walletEth, acct, sk, tk, address, keystoreRet, mnemonicSlice, seed, seedBuffer, walletEth_1;
+            var seedB, walletEth, acct, sk, tk, address, keystoreRet, mnemonicSlice, seed, seedBuffer, walletEth_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        version = 1;
                         seedB = bip39.mnemonicToSeedSync(mnemonic);
                         walletEth = ethereumjs_wallet_1.hdkey.fromMasterSeed(seedB);
                         acct = walletEth.derivePath("m/44'/60'/0'/0/0");
@@ -106,13 +125,13 @@ var SeroWallet = /** @class */ (function (_super) {
     }
     SeroWallet.prototype.buildSerializedTx = function (txParams, password) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = tx_1.signTx;
-                        return [4 /*yield*/, this.getSK(password)];
-                    case 1: return [2 /*return*/, _a.apply(void 0, [_b.sent(), txParams])];
+            var wallet;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.getWallet()];
+                    case 1:
+                        wallet = _a.sent();
+                        return [2 /*return*/, tx_1.signTx(superzk.seed2Sk(wallet.getPrivateKey(), version), txParams)];
                 }
             });
         });

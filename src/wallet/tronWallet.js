@@ -53,6 +53,8 @@ var wallet_1 = require("./wallet");
 var ethereumjs_wallet_1 = require("ethereumjs-wallet");
 var ethereumjs_wallet_2 = require("ethereumjs-wallet");
 var crypto_1 = require("tron-lib/src/utils/crypto");
+var utils_1 = require("jsuperzk/dist/utils/utils");
+var wallet_2 = require("./wallet");
 var EthereumTx = require('ethereumjs-tx').Transaction;
 var bip39 = require("bip39");
 var HOST = "https://api.trongrid.io/";
@@ -66,6 +68,25 @@ var TronWallet = /** @class */ (function (_super) {
     __extends(TronWallet, _super);
     function TronWallet(keystore) {
         var _this = _super.call(this) || this;
+        _this.getWallet = function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, new Promise((function (resolve, reject) {
+                        var signKey = wallet_2.walletEx.getSignKey();
+                        if (!signKey) {
+                            reject("wallet was unlock!");
+                        }
+                        if (signKey && signKey.split(" ").length == 12) {
+                            var seedBuffer = bip39.mnemonicToSeedSync(signKey);
+                            var walletEth = ethereumjs_wallet_1.hdkey.fromMasterSeed(seedBuffer);
+                            var acct = walletEth.derivePath("m/44'/195'/0'/0/0");
+                            resolve(acct.getWallet());
+                        }
+                        else {
+                            resolve(ethereumjs_wallet_2.default.fromPrivateKey(utils_1.toBuffer(signKey)));
+                        }
+                    }))];
+            });
+        }); };
         _this.exportMnemonic = function (password) { return __awaiter(_this, void 0, void 0, function () {
             var wallet;
             return __generator(this, function (_a) {
@@ -93,7 +114,7 @@ var TronWallet = /** @class */ (function (_super) {
                 switch (_a.label) {
                     case 0:
                         if (!this.keystore) return [3 /*break*/, 3];
-                        return [4 /*yield*/, ethereumjs_wallet_2.default.fromV3(this.keystore, password)];
+                        return [4 /*yield*/, this.getWallet()];
                     case 1:
                         wallet = _a.sent();
                         return [4 /*yield*/, tronWeb.trx.sign(txParams, wallet.getPrivateKeyString().slice(2))];

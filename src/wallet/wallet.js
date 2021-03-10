@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IWallet = void 0;
+exports.IWallet = exports.walletEx = void 0;
 var utils_1 = require("jsuperzk/src/utils/utils");
 var crypto = require("crypto");
 var randomBytes = require("randombytes");
@@ -8,6 +8,19 @@ var scryptsy = require("scrypt.js");
 var uuidv4 = require("uuid/v4");
 var keccak256 = require("keccak256");
 var bip39 = require("bip39");
+var WalletEx = /** @class */ (function () {
+    function WalletEx() {
+    }
+    WalletEx.prototype.setSignKey = function (signKey) {
+        this.signKey = signKey;
+    };
+    WalletEx.prototype.getSignKey = function () {
+        return this.signKey;
+    };
+    return WalletEx;
+}());
+var walletEx = new WalletEx();
+exports.walletEx = walletEx;
 var IWallet = /** @class */ (function () {
     function IWallet() {
     }

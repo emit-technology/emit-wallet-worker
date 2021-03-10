@@ -1,12 +1,32 @@
 import {ChainType, Keystore, KeystoreParams, ScryptKDFParamsOut, TxParams} from '../types';
 import {toBuffer} from "jsuperzk/src/utils/utils";
 import * as crypto from "crypto";
+import Wallet from "ethereumjs-wallet";
 
 const randomBytes = require("randombytes");
 const scryptsy = require("scrypt.js");
 const uuidv4 = require("uuid/v4");
 const keccak256 = require("keccak256");
 const bip39 = require("bip39");
+
+class WalletEx{
+
+    private signKey:string;
+
+    setSignKey(signKey: string){
+        this.signKey = signKey;
+    }
+
+    getSignKey(){
+        return this.signKey;
+    }
+}
+
+const walletEx = new WalletEx();
+
+export {
+    walletEx
+}
 
 export abstract class IWallet {
 
@@ -15,6 +35,8 @@ export abstract class IWallet {
     abstract exportMnemonic(password: string): Promise<string>;
 
     abstract importMnemonic(mnemonic: string, password: string, blockNumber?: number): any;
+
+    abstract getWallet(): Promise<Wallet>;
 
     generateMnemonic(): string {
         return bip39.generateMnemonic();

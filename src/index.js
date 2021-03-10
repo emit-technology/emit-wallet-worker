@@ -75,6 +75,14 @@ var Index = /** @class */ (function () {
         var message = { method: types_1.Method.genNewWallet, data: data };
         this.handlerMsg(message, cb);
     };
+    Index.prototype.unlockWallet = function (accountId, password, cb) {
+        var message = { method: types_1.Method.unlockWallet, data: { accountId: accountId, password: password } };
+        this.handlerMsg(message, cb);
+    };
+    Index.prototype.isLocked = function (cb) {
+        var message = { method: types_1.Method.isLocked, data: {} };
+        this.handlerMsg(message, cb);
+    };
     return Index;
 }());
 var service = new Index();

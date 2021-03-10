@@ -21,7 +21,6 @@ var bip39 = require("bip39");
 // const exportWords = wallet.exportMnemonic("12345678")
 // console.log(exportWords);
 // test ethereum wallet
-var begin = Date.now();
 var ethWallet = new ethWallet_1.default();
 // const ethMnemonic:string = ethWallet.generateMnemonic()
 var ethMnemonic = "diamond owner wash title love pluck upset enjoy ancient dog build price";
@@ -35,10 +34,12 @@ console.log(ethMnemonic, "ethMnemonic");
 //     })
 //
 // })
+var begin = Date.now();
 var seedBuffer = bip39.mnemonicToSeedSync(ethMnemonic);
 var walletEth = ethereumjs_wallet_1.hdkey.fromMasterSeed(seedBuffer);
 var acct = walletEth.derivePath("m/44'/195'/1'/0/0");
-console.log(acct.getWallet().getPrivateKeyString(), "privateKey");
+var end = Date.now();
+console.log(acct.getWallet().getPrivateKeyString(), "privateKey cost:", end - begin);
 //0xdcf96f66f03ed0b89ed67ac92bc9161bd94956d37c4675a8907785927d1b44b0
 // TKeifc3ocx7asvJFJRfR6tNsosqJeuGLhh
 // 0DCF96F66F03ED0B89ED67AC92BC9161BD94956D37C4675A8907785927D1B44B TXkrpHWrXUE9NvCy14aytpZXH4NUSe1No5 Dc+W9m8D7QuJ7WeskryRYb2UlW03xGdaiQd4WSfRtEs=

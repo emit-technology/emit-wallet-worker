@@ -65,7 +65,9 @@ export enum Method {
     execute,
     exportPrivateKey,
     importPrivateKey,
-    genNewWallet
+    genNewWallet,
+    unlockWallet,
+    isLocked
 }
 
 export enum ChainType {

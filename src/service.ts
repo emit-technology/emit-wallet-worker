@@ -4,7 +4,7 @@ import {AccountModel, ChainType, CreateType, Keystore, KeystoreWrapModel, Messag
 import {accountCollection, keyStoreCollection} from './collection'
 import * as superzk from "jsuperzk/dist/protocol/account";
 import {createPkrHash} from 'jsuperzk/dist/wallet/wallet'
-import {IWallet} from "./wallet/wallet";
+import {IWallet, walletEx} from "./wallet/wallet";
 import Wallet from "ethereumjs-wallet";
 import {toBuffer} from "jsuperzk/src/utils/utils";
 import TronWallet from "./wallet/tronWallet";
@@ -257,26 +257,25 @@ class Service {
         const accountInfo = await this.accountInfo(accountId);
         let keystore:any = {};
         if(accountInfo.createType == CreateType.PrivateKey){
-            const privateKey = await this.exportPrivateKey(accountId,password)
-            const privateKeyBytes = toBuffer(privateKey);
+            // const privateKey = await this.exportPrivateKey(accountId,password)
+            const privateKeyBytes = toBuffer(walletEx.getSignKey());
             const wallet = Wallet.fromPrivateKey(privateKeyBytes)
             keystore = await wallet.toV3(password);
             keystore.address = getBase58CheckAddress(getAddressFromPriKey(privateKeyBytes));
-
         }else if(accountInfo.createType == CreateType.Mnemonic){
-            const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
-                accountId: accountId,
-                chainType: ChainType.SERO
-            });
-            let mnemonic = "";
-            if (restSero && restSero.length > 0) {
-                mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
-            }
-            if(!mnemonic){
-                return Promise.reject(`No available keystore`)
-            }
+            // const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
+            //     accountId: accountId,
+            //     chainType: ChainType.SERO
+            // });
+            // let mnemonic = "";
+            // if (restSero && restSero.length > 0) {
+            //     mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
+            // }
+            // if(!mnemonic){
+            //     return Promise.reject(`No available keystore`)
+            // }
             const wallet:IWallet  = new TronWallet()
-            keystore = await wallet.importMnemonic(mnemonic,password);
+            keystore = await wallet.importMnemonic(walletEx.getSignKey(),password);
         }
 
         // const mnemonic = await this.exportMnemonic(accountId,password);
@@ -303,6 +302,35 @@ class Service {
             await keyStoreCollection.insert(data)
         }
     }
+
+    async unlockWallet(accountId:string,password:string){
+        const chainType = ChainType.ETH;
+        const rest: any = await keyStoreCollection.find({"accountId": accountId, "chainType": chainType})
+        if (rest && rest.length == 0) {
+            return Promise.reject(`Chain:${ChainType[chainType]} is not exist!`)
+        }
+        const accountInfo = await this.accountInfo(accountId);
+        if(accountInfo.createType == CreateType.PrivateKey){
+            const privateKeyString = await this.exportPrivateKey(accountId,password)
+            walletEx.setSignKey(privateKeyString)
+        }else if(accountInfo.createType == CreateType.Mnemonic){
+            const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
+                accountId: accountId,
+                chainType: ChainType.SERO
+            });
+            let mnemonic = "";
+            if (restSero && restSero.length > 0) {
+                mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
+            }
+            walletEx.setSignKey(mnemonic)
+        }
+        return Promise.resolve(true)
+    }
+
+    isLocked(){
+        const signKey = walletEx.getSignKey()
+        return !signKey
+    }
 }
 
 const service = new Service();
@@ -323,6 +351,7 @@ self.addEventListener('message', e => {
                 break;
             case Method.importMnemonic:
                 service.importMnemonic(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((rest: any) => {
+                    walletEx.setSignKey(message.data.mnemonic)
                     message.result = rest;
                     sendMessage(message)
                 }).catch((e: any) => {
@@ -383,6 +412,7 @@ self.addEventListener('message', e => {
                 break
             case Method.importPrivateKey:
                 service.importPrivateKey(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((rest: any) => {
+                    walletEx.setSignKey(message.data.mnemonic)
                     message.result = rest
                     sendMessage(message)
                 }).catch((e: any) => {
@@ -399,6 +429,20 @@ self.addEventListener('message', e => {
                     message.error = typeof e == "string" ? e : e.message;
                     sendMessage(message)
                 })
+                break
+            case Method.unlockWallet:
+                service.unlockWallet(message.data.accountId, message.data.password).then((rest: any) => {
+                    message.result = rest
+                    sendMessage(message)
+                }).catch((e: any) => {
+                    console.error(e)
+                    message.error = typeof e == "string" ? e : e.message;
+                    sendMessage(message)
+                })
+                break
+            case Method.isLocked:
+                message.result = service.isLocked()
+                sendMessage(message)
                 break
             default:
                 service.execute(message).then((rest: any) => {
