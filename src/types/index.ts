@@ -67,7 +67,12 @@ export enum Method {
     importPrivateKey,
     genNewWallet,
     unlockWallet,
-    isLocked
+    isLocked,
+
+    powStart,
+    powStop,
+    powState,
+    powClear
 }
 
 export enum ChainType {
@@ -93,7 +98,7 @@ export interface KeystoreWrapModel {
     keystore: Keystore
 }
 
-export enum CreateType{
+export enum CreateType {
     Mnemonic,
     PrivateKey,
     Generate
@@ -112,3 +117,29 @@ export enum CreateType{
 //     contractAddress?: string
 //     timestamp: number
 // }
+
+export interface MintData {
+    accountScenes: string
+    scenes: any
+    phash: string
+    address: string
+    index: string
+    accountId: string
+    hashseed?: string
+    ne?: string
+    nonce?: string
+    timestamp?: number
+    state?: MintState
+}
+
+export enum MintState {
+    _,
+    running,
+    stop
+}
+
+export enum MinerScenes {
+    _,
+    altar,
+    chaos
+}

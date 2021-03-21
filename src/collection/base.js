@@ -41,6 +41,28 @@ exports.baseConfig = {
                 unique: true
             },
         ]
+    },
+    mint: {
+        name: "mint_ne",
+        keyPath: "id",
+        autoIncrement: true,
+        indexes: [
+            {
+                index: "accountScenes",
+                relativeIndex: "accountScenes",
+                unique: true
+            },
+            {
+                index: "accountId",
+                relativeIndex: "accountId",
+                unique: false
+            },
+            {
+                index: "scenes",
+                relativeIndex: "scenes",
+                unique: false
+            }
+        ]
     }
 };
 //# sourceMappingURL=base.js.map

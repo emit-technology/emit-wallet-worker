@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateType = exports.ChainType = exports.Method = void 0;
+exports.MinerScenes = exports.MintState = exports.CreateType = exports.ChainType = exports.Method = void 0;
 var Method;
 (function (Method) {
     Method[Method["_"] = 0] = "_";
@@ -17,6 +17,10 @@ var Method;
     Method[Method["genNewWallet"] = 11] = "genNewWallet";
     Method[Method["unlockWallet"] = 12] = "unlockWallet";
     Method[Method["isLocked"] = 13] = "isLocked";
+    Method[Method["powStart"] = 14] = "powStart";
+    Method[Method["powStop"] = 15] = "powStop";
+    Method[Method["powState"] = 16] = "powState";
+    Method[Method["powClear"] = 17] = "powClear";
 })(Method = exports.Method || (exports.Method = {}));
 var ChainType;
 (function (ChainType) {
@@ -31,17 +35,16 @@ var CreateType;
     CreateType[CreateType["PrivateKey"] = 1] = "PrivateKey";
     CreateType[CreateType["Generate"] = 2] = "Generate";
 })(CreateType = exports.CreateType || (exports.CreateType = {}));
-// export interface Transaction {
-//     chain: ChainType
-//     hash: string
-//     from: string
-//     to: string
-//     value: string
-//     cy: string
-//     gas: string
-//     gasPrice: string
-//     data?: string
-//     contractAddress?: string
-//     timestamp: number
-// }
+var MintState;
+(function (MintState) {
+    MintState[MintState["_"] = 0] = "_";
+    MintState[MintState["running"] = 1] = "running";
+    MintState[MintState["stop"] = 2] = "stop";
+})(MintState = exports.MintState || (exports.MintState = {}));
+var MinerScenes;
+(function (MinerScenes) {
+    MinerScenes[MinerScenes["_"] = 0] = "_";
+    MinerScenes[MinerScenes["altar"] = 1] = "altar";
+    MinerScenes[MinerScenes["chaos"] = 2] = "chaos";
+})(MinerScenes = exports.MinerScenes || (exports.MinerScenes = {}));
 //# sourceMappingURL=index.js.map
