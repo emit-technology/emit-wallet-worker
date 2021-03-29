@@ -72,7 +72,8 @@ export enum Method {
     powStart,
     powStop,
     powState,
-    powClear
+    powClear,
+    powInit
 }
 
 export enum ChainType {

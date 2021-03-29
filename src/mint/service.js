@@ -40,7 +40,7 @@ var types_1 = require("../types");
 var collection_1 = require("../collection");
 var bignumber_js_1 = require("bignumber.js");
 var BN = require("bn.js");
-var sha256 = require("sha256");
+var keccak256 = require("keccak256");
 var MAX_UINT256 = new BN(2).pow(new BN(256)).sub(new BN(1));
 function random(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
@@ -48,27 +48,27 @@ function random(min, max) {
 var Service = /** @class */ (function () {
     function Service() {
         var _this = this;
-        this.start = function (param) { return __awaiter(_this, void 0, void 0, function () {
-            var rest, d;
+        this.init = function (param) { return __awaiter(_this, void 0, void 0, function () {
+            var hashseed, rest, d;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        this.temp = param;
-                        this.temp.hashseed = this.genHashSeed(this.temp.phash, this.temp.address, this.temp.index);
-                        this.temp.nonce = param.nonce ? param.nonce : random(0, Math.pow(2, 64)).toString();
-                        this.temp.state = types_1.MintState.running;
-                        return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: this.temp.accountScenes })];
+                        hashseed = this.genHashSeed(param.phash, param.address, param.index);
+                        return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: param.accountScenes })];
                     case 1:
                         rest = _a.sent();
+                        this.temp = param;
                         if (!(rest && rest.length > 0)) return [3 /*break*/, 3];
                         d = rest[0];
+                        if (d.phash != param.phash || d.index != param.index || d.address != param.address) {
+                            d.ne = "0";
+                            d.nonce = "0";
+                        }
                         d.phash = param.phash;
                         d.address = param.address;
                         d.index = param.index;
                         d.scenes = param.scenes;
-                        d.hashseed = this.temp.hashseed;
-                        d.nonce = this.temp.nonce;
-                        d.state = this.temp.state;
+                        d.hashseed = hashseed;
                         this.temp.ne = d.ne ? d.ne : "0";
                         return [4 /*yield*/, collection_1.mintCollections.update(d)];
                     case 2:
@@ -82,10 +82,31 @@ var Service = /** @class */ (function () {
                         _a.sent();
                         _a.label = 5;
                     case 5:
+                        this.temp.hashseed = hashseed;
+                        this.temp.nonce = param.nonce ? param.nonce : random(0, Math.pow(2, 64)).toString();
                         this.temp.timestamp = Date.now();
-                        console.log("Miner started!");
-                        this.execute();
                         return [2 /*return*/];
+                }
+            });
+        }); };
+        this.start = function () { return __awaiter(_this, void 0, void 0, function () {
+            var rest, d;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log("Miner started!");
+                        return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: this.temp.accountScenes })];
+                    case 1:
+                        rest = _a.sent();
+                        if (!(rest && rest.length > 0)) return [3 /*break*/, 3];
+                        d = rest[0];
+                        this.temp.state = types_1.MintState.running;
+                        return [4 /*yield*/, collection_1.mintCollections.update(d)];
+                    case 2:
+                        _a.sent();
+                        this.execute();
+                        _a.label = 3;
+                    case 3: return [2 /*return*/];
                 }
             });
         }); };
@@ -146,10 +167,9 @@ var Service = /** @class */ (function () {
                         rest = _a.sent();
                         if (!(rest && rest.length > 0)) return [3 /*break*/, 4];
                         d = rest[0];
-                        //must db ne < current ne
-                        console.log("d", d, ne);
                         if (!(new bignumber_js_1.default(d.ne).comparedTo(new bignumber_js_1.default(ne)) == -1)) return [3 /*break*/, 3];
                         d.ne = ne;
+                        d.nonce = nonce;
                         d.timestamp = Date.now();
                         return [4 /*yield*/, collection_1.mintCollections.update(d)];
                     case 2:
@@ -171,8 +191,18 @@ var Service = /** @class */ (function () {
             if (e && e.data && e.data.method) {
                 var message_1 = e.data;
                 switch (message_1.method) {
+                    case types_1.Method.powInit:
+                        _this.init(message_1.data).then(function (rest) {
+                            message_1.result = rest;
+                            sendMessage(message_1);
+                        }).catch(function (e) {
+                            console.error(e);
+                            message_1.error = typeof e == "string" ? e : e.message;
+                            sendMessage(message_1);
+                        });
+                        break;
                     case types_1.Method.powStart:
-                        _this.start(message_1.data).then(function (rest) {
+                        _this.start().then(function (rest) {
                             message_1.result = rest;
                             sendMessage(message_1);
                         }).catch(function (e) {
@@ -213,12 +243,12 @@ var Service = /** @class */ (function () {
         var buf2 = Buffer.from(_addr.slice(2), 'hex');
         var buf3 = new BN(_index.slice(2), "hex").toArrayLike(Buffer, "be", 8);
         var bufA = Buffer.concat([buf1, buf2, buf3]);
-        return sha256(bufA);
+        return keccak256(bufA).toString('hex');
     };
     Service.prototype.genDigest = function (_hashSeed, _nonce) {
         var buf1 = Buffer.from(_hashSeed, "hex");
         var bufA = Buffer.concat([buf1, _nonce]);
-        var a = sha256(bufA);
+        var a = keccak256(bufA).toString('hex');
         var te = new BN(a, "hex").toArrayLike(Buffer, "be", 64);
         return new BN(te);
     };

@@ -4,8 +4,8 @@ abstract class Mint {
 
     abstract handlerMsg (message: Message, cb: Function):void;
 
-    mintStart = (data: MintData, cb: Function) => {
-        let message: any = {method: Method.powStart, data: data}
+    mintInit = (data: MintData, cb: Function) => {
+        let message: any = {method: Method.powInit, data: data}
         this.handlerMsg(message, cb);
     }
 
@@ -16,6 +16,11 @@ abstract class Mint {
 
     mintState = (accountId: string, cb: Function) => {
         let message: any = {method: Method.powState, data: accountId}
+        this.handlerMsg(message, cb);
+    }
+
+    mintStart = (cb: Function) => {
+        let message: any = {method: Method.powStart,data:{}}
         this.handlerMsg(message, cb);
     }
 

@@ -3,7 +3,7 @@ import {mintCollections} from "../collection";
 import BigNumber from "bignumber.js";
 
 const BN = require("bn.js");
-const sha256 = require("sha256");
+const keccak256 = require("keccak256");
 const MAX_UINT256 = new BN(2).pow(new BN(256)).sub(new BN(1));
 
 function random(min: number, max: number) {
@@ -24,13 +24,13 @@ class Service {
         const buf2 = Buffer.from(_addr.slice(2), 'hex')
         const buf3 = new BN(_index.slice(2), "hex").toArrayLike(Buffer, "be", 8)
         const bufA = Buffer.concat([buf1, buf2, buf3])
-        return sha256(bufA);
+        return keccak256(bufA).toString('hex');
     }
 
     private genDigest(_hashSeed: string, _nonce: Buffer): any {
         const buf1 = Buffer.from(_hashSeed, "hex");
         const bufA = Buffer.concat([buf1, _nonce])
-        const a = sha256(bufA);
+        const a = keccak256(bufA).toString('hex');
         const te = new BN(a, "hex").toArrayLike(Buffer, "be", 64)
         return new BN(te);
     }
@@ -42,31 +42,43 @@ class Service {
         return new BN(buf).toString(10)
     }
 
-    start = async (param: MintData) => {
+    init = async (param: MintData) => {
+        const hashseed = this.genHashSeed(param.phash, param.address, param.index);
+        const rest: any = await mintCollections.find({accountScenes: param.accountScenes});
         this.temp = param;
-        this.temp.hashseed = this.genHashSeed(this.temp.phash, this.temp.address, this.temp.index)
-        this.temp.nonce = param.nonce ? param.nonce : random(0, 2 ** 64).toString()
-        this.temp.state = MintState.running;
-        const rest: any = await mintCollections.find({accountScenes: this.temp.accountScenes});
         if (rest && rest.length > 0) {
             const d: MintData = rest[0];
+            if (d.phash != param.phash || d.index != param.index || d.address != param.address) {
+                d.ne = "0"
+                d.nonce = "0"
+            }
             d.phash = param.phash;
             d.address = param.address;
             d.index = param.index;
             d.scenes = param.scenes;
-            d.hashseed = this.temp.hashseed;
-            d.nonce = this.temp.nonce;
-            d.state = this.temp.state;
-            this.temp.ne = d.ne?d.ne:"0";
+            d.hashseed = hashseed;
+            this.temp.ne = d.ne ? d.ne : "0";
             await mintCollections.update(d)
         } else {
             this.temp.ne = "0"
             this.temp.timestamp = Date.now();
             await mintCollections.insert(this.temp)
         }
+        this.temp.hashseed = hashseed
+        this.temp.nonce = param.nonce ? param.nonce : random(0, 2 ** 64).toString()
         this.temp.timestamp = Date.now();
+    }
+
+    start = async () => {
         console.log("Miner started!")
-        this.execute();
+        const rest: any = await mintCollections.find({accountScenes: this.temp.accountScenes});
+        if (rest && rest.length > 0) {
+            const d: MintData = rest[0];
+            this.temp.state = MintState.running;
+            await mintCollections.update(d)
+            this.execute();
+        }
+        return
     }
 
     stop = async (accountScenes: string) => {
@@ -125,9 +137,9 @@ class Service {
             if (rest && rest.length > 0) {
                 const d: MintData = rest[0];
                 //must db ne < current ne
-                console.log("d",d,ne)
                 if (new BigNumber(d.ne).comparedTo(new BigNumber(ne)) == -1) {
                     d.ne = ne;
+                    d.nonce = nonce;
                     d.timestamp = Date.now();
                     await mintCollections.update(d)
                 }
@@ -140,12 +152,22 @@ class Service {
         return Promise.resolve();
     }
 
-    handle = (e:any) =>{
+    handle = (e: any) => {
         if (e && e.data && e.data.method) {
             const message: Message = e.data;
             switch (message.method) {
+                case Method.powInit:
+                    this.init(message.data).then((rest: any) => {
+                        message.result = rest
+                        sendMessage(message)
+                    }).catch((e: any) => {
+                        console.error(e)
+                        message.error = typeof e == "string" ? e : e.message;
+                        sendMessage(message)
+                    })
+                    break;
                 case Method.powStart:
-                    this.start(message.data).then((rest: any) => {
+                    this.start().then((rest: any) => {
                         message.result = rest
                         sendMessage(message)
                     }).catch((e: any) => {

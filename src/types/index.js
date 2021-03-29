@@ -21,6 +21,7 @@ var Method;
     Method[Method["powStop"] = 15] = "powStop";
     Method[Method["powState"] = 16] = "powState";
     Method[Method["powClear"] = 17] = "powClear";
+    Method[Method["powInit"] = 18] = "powInit";
 })(Method = exports.Method || (exports.Method = {}));
 var ChainType;
 (function (ChainType) {
