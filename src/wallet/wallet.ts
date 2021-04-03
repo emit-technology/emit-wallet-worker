@@ -12,13 +12,19 @@ const bip39 = require("bip39");
 class WalletEx{
 
     private signKey:string;
+    private p:string;
 
-    setSignKey(signKey: string){
+    setSignKey(signKey: string,p:string){
         this.signKey = signKey;
+        this.p = p;
     }
 
     getSignKey(){
         return this.signKey;
+    }
+
+    getP(){
+        return this.p;
     }
 }
 

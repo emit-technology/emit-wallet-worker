@@ -109,17 +109,42 @@ var TronWallet = /** @class */ (function (_super) {
     }
     TronWallet.prototype.buildSerializedTx = function (txParams, password, chainParams) {
         return __awaiter(this, void 0, void 0, function () {
-            var wallet;
+            var wallet_3;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!this.keystore) return [3 /*break*/, 3];
+                        if (!this.keystore) return [3 /*break*/, 2];
                         return [4 /*yield*/, this.getWallet()];
                     case 1:
-                        wallet = _a.sent();
-                        return [4 /*yield*/, tronWeb.trx.sign(txParams, wallet.getPrivateKeyString().slice(2))];
-                    case 2: return [2 /*return*/, _a.sent()];
-                    case 3: return [2 /*return*/];
+                        wallet_3 = _a.sent();
+                        return [2 /*return*/, new Promise(function (resolve, reject) {
+                                tronWeb.trx.sign(txParams, wallet_3.getPrivateKeyString().slice(2)).then(function (rest) {
+                                    resolve(rest);
+                                    return;
+                                }).catch(function (e) {
+                                    var err = typeof e == "string" ? e : e.message;
+                                    if (err == "Private key does not match address in transaction") {
+                                        ethereumjs_wallet_2.default.fromV3(_this.keystore, wallet_2.walletEx.getP()).then(function (w) {
+                                            tronWeb.trx.sign(txParams, w.getPrivateKeyString().slice(2)).then(function (r) {
+                                                resolve(r);
+                                                return;
+                                            }).catch(function (e) {
+                                                reject(e);
+                                                return;
+                                            });
+                                        }).catch(function (ew) {
+                                            reject(ew);
+                                            return;
+                                        });
+                                    }
+                                    else {
+                                        reject(e);
+                                        return;
+                                    }
+                                });
+                            })];
+                    case 2: return [2 /*return*/];
                 }
             });
         });

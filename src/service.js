@@ -466,7 +466,7 @@ var Service = /** @class */ (function () {
                         return [4 /*yield*/, this.exportPrivateKey(accountId, password)];
                     case 3:
                         privateKeyString = _a.sent();
-                        wallet_2.walletEx.setSignKey(privateKeyString);
+                        wallet_2.walletEx.setSignKey(privateKeyString, password);
                         return [3 /*break*/, 8];
                     case 4:
                         if (!(accountInfo.createType == types_1.CreateType.Mnemonic)) return [3 /*break*/, 8];
@@ -483,7 +483,7 @@ var Service = /** @class */ (function () {
                         mnemonic = _a.sent();
                         _a.label = 7;
                     case 7:
-                        wallet_2.walletEx.setSignKey(mnemonic);
+                        wallet_2.walletEx.setSignKey(mnemonic, password);
                         _a.label = 8;
                     case 8: return [2 /*return*/, Promise.resolve(true)];
                 }
@@ -512,7 +512,7 @@ self.addEventListener('message', function (e) {
                 break;
             case types_1.Method.importMnemonic:
                 service.importMnemonic(message_1.data.mnemonic, message_1.data.password, message_1.data.name, message_1.data.passwordHint, message_1.data.avatar).then(function (rest) {
-                    wallet_2.walletEx.setSignKey(message_1.data.mnemonic);
+                    wallet_2.walletEx.setSignKey(message_1.data.mnemonic, message_1.data.password);
                     message_1.result = rest;
                     sendMessage(message_1);
                 }).catch(function (e) {
@@ -573,7 +573,7 @@ self.addEventListener('message', function (e) {
                 break;
             case types_1.Method.importPrivateKey:
                 service.importPrivateKey(message_1.data.mnemonic, message_1.data.password, message_1.data.name, message_1.data.passwordHint, message_1.data.avatar).then(function (rest) {
-                    wallet_2.walletEx.setSignKey(message_1.data.mnemonic);
+                    wallet_2.walletEx.setSignKey(message_1.data.mnemonic, message_1.data.password);
                     message_1.result = rest;
                     sendMessage(message_1);
                 }).catch(function (e) {

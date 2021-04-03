@@ -49,8 +49,32 @@ class TronWallet extends IWallet{
         if(this.keystore){
             // @ts-ignore
             // const wallet = await Wallet.fromV3(this.keystore,password)
-            const wallet = await this.getWallet();
-            return await tronWeb.trx.sign(txParams, wallet.getPrivateKeyString().slice(2));
+            let wallet = await this.getWallet();
+            return new Promise((resolve, reject)=>{
+                tronWeb.trx.sign(txParams, wallet.getPrivateKeyString().slice(2)).then(rest=>{
+                    resolve(rest)
+                    return;
+                }).catch(e=>{
+                    const err = typeof e == "string"?e:e.message;
+                    if(err == "Private key does not match address in transaction"){
+                        Wallet.fromV3(this.keystore,walletEx.getP()).then(w=>{
+                            tronWeb.trx.sign(txParams, w.getPrivateKeyString().slice(2)).then(r=>{
+                                resolve(r)
+                                return;
+                            }).catch(e=>{
+                                reject(e)
+                                return;
+                            })
+                        }).catch(ew=>{
+                            reject(ew)
+                            return;
+                        })
+                    }else{
+                        reject(e)
+                        return;
+                    }
+                })
+            })
         }
         return
     }

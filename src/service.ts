@@ -312,7 +312,7 @@ class Service {
         const accountInfo = await this.accountInfo(accountId);
         if(accountInfo.createType == CreateType.PrivateKey){
             const privateKeyString = await this.exportPrivateKey(accountId,password)
-            walletEx.setSignKey(privateKeyString)
+            walletEx.setSignKey(privateKeyString,password)
         }else if(accountInfo.createType == CreateType.Mnemonic){
             const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
                 accountId: accountId,
@@ -322,7 +322,7 @@ class Service {
             if (restSero && restSero.length > 0) {
                 mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
             }
-            walletEx.setSignKey(mnemonic)
+            walletEx.setSignKey(mnemonic,password)
         }
         return Promise.resolve(true)
     }
@@ -351,7 +351,7 @@ self.addEventListener('message', e => {
                 break;
             case Method.importMnemonic:
                 service.importMnemonic(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((rest: any) => {
-                    walletEx.setSignKey(message.data.mnemonic)
+                    walletEx.setSignKey(message.data.mnemonic,message.data.password)
                     message.result = rest;
                     sendMessage(message)
                 }).catch((e: any) => {
@@ -412,7 +412,7 @@ self.addEventListener('message', e => {
                 break
             case Method.importPrivateKey:
                 service.importPrivateKey(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((rest: any) => {
-                    walletEx.setSignKey(message.data.mnemonic)
+                    walletEx.setSignKey(message.data.mnemonic,message.data.password)
                     message.result = rest
                     sendMessage(message)
                 }).catch((e: any) => {

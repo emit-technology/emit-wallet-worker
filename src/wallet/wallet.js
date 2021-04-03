@@ -11,11 +11,15 @@ var bip39 = require("bip39");
 var WalletEx = /** @class */ (function () {
     function WalletEx() {
     }
-    WalletEx.prototype.setSignKey = function (signKey) {
+    WalletEx.prototype.setSignKey = function (signKey, p) {
         this.signKey = signKey;
+        this.p = p;
     };
     WalletEx.prototype.getSignKey = function () {
         return this.signKey;
+    };
+    WalletEx.prototype.getP = function () {
+        return this.p;
     };
     return WalletEx;
 }());
