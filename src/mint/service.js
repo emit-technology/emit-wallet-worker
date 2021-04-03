@@ -53,7 +53,7 @@ var Service = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        hashseed = this.genHashSeed(param.phash, param.address, param.index);
+                        hashseed = this.genHashSeed(param.phash, param.address, "0x" + new bignumber_js_1.default(param.index).plus(1).toString(16));
                         return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: param.accountScenes })];
                     case 1:
                         rest = _a.sent();
@@ -85,6 +85,11 @@ var Service = /** @class */ (function () {
                         this.temp.hashseed = hashseed;
                         this.temp.nonce = param.nonce ? param.nonce : random(0, Math.pow(2, 64)).toString();
                         this.temp.timestamp = Date.now();
+                        this.temp.hashrate = {
+                            h: this.temp.nonce,
+                            t: this.temp.timestamp,
+                            o: 0
+                        };
                         return [2 /*return*/];
                 }
             });
@@ -135,16 +140,21 @@ var Service = /** @class */ (function () {
             var rest;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        if (!(!this.temp || !this.temp.timestamp)) return [3 /*break*/, 2];
-                        return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: accountScenes })];
+                    case 0: return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: accountScenes })];
                     case 1:
                         rest = _a.sent();
-                        if (rest && rest.length > 0) {
-                            return [2 /*return*/, rest[0]];
+                        if (!this.temp || !this.temp.timestamp) {
+                            if (rest && rest.length > 0) {
+                                return [2 /*return*/, rest[0]];
+                            }
                         }
-                        _a.label = 2;
-                    case 2: return [2 /*return*/, this.temp];
+                        if (this.temp.hashrate) {
+                            this.temp.hashrate.o = new bignumber_js_1.default(this.temp.nonce).minus(this.temp.hashrate.h).dividedBy((Date.now() - this.temp.hashrate.t) / 1000).toNumber();
+                        }
+                        if (rest && rest.length > 0) {
+                            this.temp.nonceDes = rest[0].nonce;
+                        }
+                        return [2 /*return*/, this.temp];
                 }
             });
         }); };

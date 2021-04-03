@@ -129,8 +129,14 @@ export interface MintData {
     hashseed?: string
     ne?: string
     nonce?: string
+    nonceDes?: string
     timestamp?: number
     state?: MintState
+    hashrate?: {
+        h:string
+        t:number
+        o:number
+    }
 }
 
 export enum MintState {

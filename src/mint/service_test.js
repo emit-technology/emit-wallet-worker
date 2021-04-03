@@ -24,13 +24,36 @@ var Test = /** @class */ (function () {
         var digest = this.genDigest(_hashSeed, _nonce);
         var num = MAX_UINT256.div(digest);
         var buf = num.toArrayLike(Buffer, 'be', 8);
-        return new BN(buf).toString(10);
+        return new BN(buf).toNumber();
     };
     return Test;
 }());
 var service = new Test();
-var seed = service.genHashSeed("0xc0f25fa2950a387fb84929dec740dd54cfa13d64b697941537230753a6ccc513", "0xeb5b6fefee4ad2906f01386292bda1a94282aa3b", "1");
-var buf = new BN("10000000").toArrayLike(Buffer, "be", 8);
-var ne = service.calcNE(seed, buf);
-console.log(seed, ne);
+var seed = service.genHashSeed("0xc1839146d1833431ed3c0aae18b31d9c478d16bc87d08d3dffecbb55b318f1a5", "0x86e6e4652818b1790a3c58283d9bc41df255febd", "0x10");
+function run() {
+    var maxNe = 0;
+    for (var i = 0; i < 100000; i++) {
+        var buf = new BN(i + 1).toArrayLike(Buffer, "be", 8);
+        var ne = service.calcNE(seed, buf);
+        if (ne > maxNe) {
+            maxNe = ne;
+            console.log(maxNe);
+        }
+    }
+}
+run();
+//
+// function calcDark(dna:string):number{
+//     const u256 = new BN(dna.slice(2),16).toArrayLike(Buffer, "be", 32)
+//     return (new BigNumber(u256[0]&0x3).plus(1).toNumber())
+// }
+//
+// function isDark(dna:string):boolean {
+//     const u256 = new BN(dna.slice(2),16).toArrayLike(Buffer, "be", 32)
+//     return (u256[0]&0xFC) == 0;
+// }
+//
+// const dna = "0x01fc5af5f73993593dc84ae6cb53724bd5cc7e3e6a9967692ba30775b59b7f02";
+//
+// console.log(isDark(dna),calcDark(dna))
 //# sourceMappingURL=service_test.js.map

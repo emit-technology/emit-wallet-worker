@@ -43,7 +43,7 @@ class Service {
     }
 
     init = async (param: MintData) => {
-        const hashseed = this.genHashSeed(param.phash, param.address, param.index);
+        const hashseed = this.genHashSeed(param.phash, param.address, "0x"+new BigNumber(param.index).plus(1).toString(16));
         const rest: any = await mintCollections.find({accountScenes: param.accountScenes});
         this.temp = param;
         if (rest && rest.length > 0) {
@@ -64,9 +64,15 @@ class Service {
             this.temp.timestamp = Date.now();
             await mintCollections.insert(this.temp)
         }
+
         this.temp.hashseed = hashseed
         this.temp.nonce = param.nonce ? param.nonce : random(0, 2 ** 64).toString()
         this.temp.timestamp = Date.now();
+        this.temp.hashrate = {
+            h:this.temp.nonce,
+            t:this.temp.timestamp,
+            o:0
+        };
     }
 
     start = async () => {
@@ -93,11 +99,17 @@ class Service {
     }
 
     mintState = async (accountScenes: string) => {
+        const rest: any = await mintCollections.find({accountScenes: accountScenes});
         if (!this.temp || !this.temp.timestamp) {
-            const rest: any = await mintCollections.find({accountScenes: accountScenes});
             if (rest && rest.length > 0) {
                 return rest[0]
             }
+        }
+        if(this.temp.hashrate){
+            this.temp.hashrate.o = new BigNumber(this.temp.nonce).minus(this.temp.hashrate.h).dividedBy((Date.now()-this.temp.hashrate.t)/1000).toNumber()
+        }
+        if (rest && rest.length > 0) {
+            this.temp.nonceDes = rest[0].nonce;
         }
         return this.temp
     }
