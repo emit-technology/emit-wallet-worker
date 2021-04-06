@@ -618,7 +618,7 @@ self.addEventListener('message', function (e) {
     }
 });
 function sendMessage(message) {
-    console.log("send msg: ", message);
+    // console.log("send msg: ", message);
     // @ts-ignore
     self.postMessage(message);
 }

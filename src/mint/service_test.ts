@@ -32,24 +32,29 @@ class Test{
 }
 const service = new Test();
 
-const seed = service.genHashSeed("0xc1839146d1833431ed3c0aae18b31d9c478d16bc87d08d3dffecbb55b318f1a5",
-    "0x86e6e4652818b1790a3c58283d9bc41df255febd","0x10")
+const seed = "0x59fb2b173e04deca137312f1773e80809d5b114a08e669ccc8a5293f94056cbd";
+
+const seedss = service.genHashSeed("0xf712c57636c4f014f52c8823a672650b486ea50300719e10393833104ed90baa","0x86e6e4652818b1790a3c58283d9bc41df255febd","0x7")
 
 
-function run(){
-    let maxNe = 0 ;
-    for(let i=0;i<100000;i++){
-        const buf = new BN(i+1).toArrayLike(Buffer, "be", 8);
-        const ne = service.calcNE(seed,buf)
-        if(ne > maxNe){
-            maxNe =ne;
-            console.log(maxNe)
-        }
-    }
+const buf = new BN("cf29c89b1962f07",16).toArrayLike(Buffer, "be", 8);
+const ne = service.calcNE(seedss,buf)
+console.log("ne",ne,seedss)
 
-}
+// function run(){
+//     let maxNe = 0 ;
+//     for(let i=0;i<100000;i++){
+//         const buf = new BN("932980188022976263").toArrayLike(Buffer, "be", 8);
+//         const ne = service.calcNE(seed,buf)
+//         if(ne > maxNe){
+//             maxNe =ne;
+//             console.log(maxNe)
+//         }
+//     }
+//
+// }
 
-run();
+// run();
 
 //
 // function calcDark(dna:string):number{

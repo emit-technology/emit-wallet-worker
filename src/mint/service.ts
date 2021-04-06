@@ -48,7 +48,12 @@ class Service {
         this.temp = param;
         if (rest && rest.length > 0) {
             const d: MintData = rest[0];
-            if (d.phash != param.phash || d.index != param.index || d.address != param.address) {
+
+            const seed = this.genHashSeed(d.phash, d.address, "0x"+new BigNumber(d.index).plus(1).toString(16));
+            const buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
+            const ne = this.calcNE(seed,buf)
+
+            if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne) {
                 d.ne = "0"
                 d.nonce = "0"
             }
@@ -144,7 +149,7 @@ class Service {
         const ne: any = this.calcNE(this.temp.hashseed, buf);
         if (new BigNumber(this.temp.ne).comparedTo(new BigNumber(ne)) == -1) {
             this.temp.ne = ne;
-            console.log(`index=[${this.temp.index}], nonce=[${this.temp.nonce}], ne=[${ne}]`)
+            // console.log(`index=[${this.temp.index}], nonce=[${this.temp.nonce}], ne=[${ne}]`)
             const rest: any = await mintCollections.find({accountScenes: this.temp.accountScenes});
             if (rest && rest.length > 0) {
                 const d: MintData = rest[0];
@@ -216,7 +221,7 @@ class Service {
 }
 
 function sendMessage(message: Message): void {
-    console.log("send msg: ", message);
+    // console.log("send msg: ", message);
     // @ts-ignore
     self.postMessage(message)
 }

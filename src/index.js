@@ -23,7 +23,7 @@ var Index = /** @class */ (function () {
         if (cb) {
             var msgId = this.messageId++;
             message.messageId = msgId;
-            console.log("message>>", message);
+            // console.log("message>>", message);
             worker.postMessage(message);
             this.callbackHandler.set(msgId, cb);
         }

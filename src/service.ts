@@ -458,7 +458,7 @@ self.addEventListener('message', e => {
 })
 
 function sendMessage(message: Message): void {
-    console.log("send msg: ", message);
+    // console.log("send msg: ", message);
     // @ts-ignore
     self.postMessage(message)
 }

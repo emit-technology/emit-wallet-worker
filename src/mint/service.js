@@ -49,7 +49,7 @@ var Service = /** @class */ (function () {
     function Service() {
         var _this = this;
         this.init = function (param) { return __awaiter(_this, void 0, void 0, function () {
-            var hashseed, rest, d;
+            var hashseed, rest, d, seed, buf, ne;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -60,7 +60,10 @@ var Service = /** @class */ (function () {
                         this.temp = param;
                         if (!(rest && rest.length > 0)) return [3 /*break*/, 3];
                         d = rest[0];
-                        if (d.phash != param.phash || d.index != param.index || d.address != param.address) {
+                        seed = this.genHashSeed(d.phash, d.address, "0x" + new bignumber_js_1.default(d.index).plus(1).toString(16));
+                        buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
+                        ne = this.calcNE(seed, buf);
+                        if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne) {
                             d.ne = "0";
                             d.nonce = "0";
                         }
@@ -171,7 +174,6 @@ var Service = /** @class */ (function () {
                         ne = this.calcNE(this.temp.hashseed, buf);
                         if (!(new bignumber_js_1.default(this.temp.ne).comparedTo(new bignumber_js_1.default(ne)) == -1)) return [3 /*break*/, 6];
                         this.temp.ne = ne;
-                        console.log("index=[" + this.temp.index + "], nonce=[" + this.temp.nonce + "], ne=[" + ne + "]");
                         return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: this.temp.accountScenes })];
                     case 1:
                         rest = _a.sent();
@@ -292,7 +294,7 @@ var Service = /** @class */ (function () {
     return Service;
 }());
 function sendMessage(message) {
-    console.log("send msg: ", message);
+    // console.log("send msg: ", message);
     // @ts-ignore
     self.postMessage(message);
 }

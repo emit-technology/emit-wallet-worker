@@ -28,7 +28,7 @@ class Index {
         if (cb) {
             const msgId = this.messageId++;
             message.messageId = msgId;
-            console.log("message>>", message);
+            // console.log("message>>", message);
             worker.postMessage(message);
             this.callbackHandler.set(msgId, cb)
         }
