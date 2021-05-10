@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var types_1 = require("../types");
 var collection_1 = require("../collection");
 var bignumber_js_1 = require("bignumber.js");
+var rpc_1 = require("../rpc");
 var BN = require("bn.js");
 var keccak256 = require("keccak256");
 var MAX_UINT256 = new BN(2).pow(new BN(256)).sub(new BN(1));
@@ -49,23 +50,53 @@ var Service = /** @class */ (function () {
     function Service() {
         var _this = this;
         this.init = function (param) { return __awaiter(_this, void 0, void 0, function () {
-            var hashseed, rest, d, seed, buf, ne;
+            var _serail, hashseed, rest, remote, e_1, d, seed, buf, ne;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        hashseed = this.genHashSeed(param.phash, param.address, "0x" + new bignumber_js_1.default(param.index).plus(1).toString(16));
+                        _serail = new bignumber_js_1.default(param.index).plus(1);
+                        hashseed = this.genHashSeed(param.phash, param.address, "0x" + _serail.toString(16));
                         return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: param.accountScenes })];
                     case 1:
                         rest = _a.sent();
                         this.temp = param;
-                        if (!(rest && rest.length > 0)) return [3 /*break*/, 3];
+                        remote = {};
+                        _a.label = 2;
+                    case 2:
+                        _a.trys.push([2, 4, , 5]);
+                        return [4 /*yield*/, rpc_1.default.post("https://node-ne.emit.technology/hashrate/one", {
+                                phash: param.phash.slice(2),
+                                shortAddress: param.address.slice(2),
+                                serial: _serail
+                            })];
+                    case 3:
+                        remote = _a.sent();
+                        return [3 /*break*/, 5];
+                    case 4:
+                        e_1 = _a.sent();
+                        console.error(e_1);
+                        return [3 /*break*/, 5];
+                    case 5:
+                        if (!(rest && rest.length > 0)) return [3 /*break*/, 7];
                         d = rest[0];
                         seed = this.genHashSeed(d.phash, d.address, "0x" + new bignumber_js_1.default(d.index).plus(1).toString(16));
                         buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
                         ne = this.calcNE(seed, buf);
                         if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne) {
-                            d.ne = "0";
-                            d.nonce = "0";
+                            if (remote && remote.shortAddress) {
+                                d.ne = remote.lastNe;
+                                d.nonce = remote.nonce;
+                            }
+                            else {
+                                d.ne = "0";
+                                d.nonce = "0";
+                            }
+                        }
+                        else {
+                            if (remote && remote.shortAddress && new bignumber_js_1.default(d.ne).toNumber() < new bignumber_js_1.default(remote.lastNe).toNumber()) {
+                                d.ne = remote.lastNe;
+                                d.nonce = remote.nonce;
+                            }
                         }
                         d.phash = param.phash;
                         d.address = param.address;
@@ -74,17 +105,17 @@ var Service = /** @class */ (function () {
                         d.hashseed = hashseed;
                         this.temp.ne = d.ne ? d.ne : "0";
                         return [4 /*yield*/, collection_1.mintCollections.update(d)];
-                    case 2:
+                    case 6:
                         _a.sent();
-                        return [3 /*break*/, 5];
-                    case 3:
+                        return [3 /*break*/, 9];
+                    case 7:
                         this.temp.ne = "0";
                         this.temp.timestamp = Date.now();
                         return [4 /*yield*/, collection_1.mintCollections.insert(this.temp)];
-                    case 4:
+                    case 8:
                         _a.sent();
-                        _a.label = 5;
-                    case 5:
+                        _a.label = 9;
+                    case 9:
                         this.temp.hashseed = hashseed;
                         this.temp.nonce = param.nonce ? param.nonce : random(0, Math.pow(2, 64)).toString();
                         this.temp.timestamp = Date.now();

@@ -1,6 +1,7 @@
 import {Message, Method, MintData, MintState} from "../types";
 import {mintCollections} from "../collection";
 import BigNumber from "bignumber.js";
+import rpc from "../rpc";
 
 const BN = require("bn.js");
 const keccak256 = require("keccak256");
@@ -43,9 +44,22 @@ class Service {
     }
 
     init = async (param: MintData) => {
-        const hashseed = this.genHashSeed(param.phash, param.address, "0x"+new BigNumber(param.index).plus(1).toString(16));
+        const _serail = new BigNumber(param.index).plus(1);
+        const hashseed = this.genHashSeed(param.phash, param.address, "0x"+_serail.toString(16));
         const rest: any = await mintCollections.find({accountScenes: param.accountScenes});
         this.temp = param;
+
+        let remote:any = {}
+        try{
+            remote = await rpc.post("https://node-ne.emit.technology/hashrate/one",{
+                phash:param.phash.slice(2),
+                shortAddress:param.address.slice(2),
+                serial:_serail
+            })
+        }catch (e){
+            console.error(e)
+        }
+
         if (rest && rest.length > 0) {
             const d: MintData = rest[0];
 
@@ -54,8 +68,18 @@ class Service {
             const ne = this.calcNE(seed,buf)
 
             if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne) {
-                d.ne = "0"
-                d.nonce = "0"
+                if(remote && remote.shortAddress){
+                    d.ne = remote.lastNe;
+                    d.nonce = remote.nonce;
+                }else{
+                    d.ne = "0"
+                    d.nonce = "0"
+                }
+            }else{
+                if(remote && remote.shortAddress && new BigNumber(d.ne).toNumber()<new BigNumber(remote.lastNe).toNumber()){
+                    d.ne = remote.lastNe;
+                    d.nonce = remote.nonce;
+                }
             }
             d.phash = param.phash;
             d.address = param.address;
