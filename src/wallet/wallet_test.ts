@@ -3,6 +3,8 @@ import {SeroWallet} from './seroWallet'
 import EthWallet from './ethWallet'
 import {Keystore} from "../types";
 import Wallet, {hdkey} from 'ethereumjs-wallet'
+import * as superzk from "jsuperzk/dist/protocol/account";
+import {createPkrHash,createOldPkrHash} from 'jsuperzk/src/wallet/wallet'
 
 const bip39 = require("bip39");
 
@@ -23,31 +25,14 @@ const bip39 = require("bip39");
 //
 // const exportWords = wallet.exportMnemonic("12345678")
 // console.log(exportWords);
-
-
-// test ethereum wallet
-
-let ethWallet:IWallet = new EthWallet()
-// const ethMnemonic:string = ethWallet.generateMnemonic()
-
-const ethMnemonic = "diamond owner wash title love pluck upset enjoy ancient dog build price";
-console.log(ethMnemonic,"ethMnemonic")
-// ethWallet.importMnemonic(ethMnemonic,"12345678",0).then(keystore=>{
-//     console.log(keystore,"keystore promise")
-//
-//     ethWallet = new EthWallet(keystore);
-//     ethWallet.exportMnemonic("12345678").then(rest=>{
-//         console.log(rest,"exportMnemonic promise")
-//     })
-//
 // })
 
 const begin = Date.now();
-const seedBuffer = bip39.mnemonicToSeedSync(ethMnemonic)
+const seedBuffer = bip39.mnemonicToSeedSync("")
 const walletEth = hdkey.fromMasterSeed(seedBuffer)
-const acct = walletEth.derivePath(`m/44'/195'/1'/0/0`)
+const acct = walletEth.derivePath(`m/44'/60'/0'/0/0`)
 const end = Date.now();
-console.log(acct.getWallet().getPrivateKeyString(),"privateKey cost:",end-begin);
+// console.log(acct.getWallet().getPrivateKeyString(),"privateKey cost:",end-begin);
 
 //0xdcf96f66f03ed0b89ed67ac92bc9161bd94956d37c4675a8907785927d1b44b0
 // TKeifc3ocx7asvJFJRfR6tNsosqJeuGLhh

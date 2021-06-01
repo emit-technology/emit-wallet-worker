@@ -1,30 +1,76 @@
-import {ChainType, Keystore, KeystoreParams, ScryptKDFParamsOut, TxParams} from '../types';
+import {AccountModel, ChainType, Keystore, KeystoreParams, ScryptKDFParamsOut, TxParams} from '../types';
 import {toBuffer} from "jsuperzk/src/utils/utils";
 import * as crypto from "crypto";
 import Wallet from "ethereumjs-wallet";
+import {accountCollection} from "../collection";
+import {Decrypt, Encrypt} from "../utils/crypto";
 
 const randomBytes = require("randombytes");
 const scryptsy = require("scrypt.js");
 const uuidv4 = require("uuid/v4");
 const keccak256 = require("keccak256");
 const bip39 = require("bip39");
+const CryptoJS = require("crypto-js");
 
 class WalletEx{
 
-    private signKey:string;
-    private p:string;
+    private pKey:string;
+    private accountId:string
 
-    setSignKey(signKey: string,p:string){
-        this.signKey = signKey;
-        this.p = p;
+    getPKey = (p:string,accountId:string)=>{
+        return CryptoJS.SHA256([p,accountId].join("")).toString()
     }
 
-    getSignKey(){
-        return this.signKey;
+    async setSignKey(signKey: string,password:string,accountId:string){
+        const pKey = this.getPKey(password,accountId)
+        const rest:Array<AccountModel> = await accountCollection.find({accountId:accountId})
+        if(rest && rest.length>0){
+            const account = rest[0];
+            account.key = Encrypt({key:signKey},pKey)
+                // CryptoJS.AES.encrypt(signKey, pKey).toString();
+            await accountCollection.update(account)
+            this.pKey = pKey;
+            this.accountId = accountId
+            return Promise.resolve(true)
+        }
+        return Promise.reject("account not find!")
+    }
+
+    lock = ()=>{
+        this.pKey = ""
+        this.accountId = ""
+    }
+
+    async unLock(accountId:string,password?:string){
+        let pKey = this.pKey;
+        if(password){
+            pKey = this.getPKey(password,accountId)
+        }
+        const rest:Array<AccountModel> = await accountCollection.find({accountId:accountId})
+        if(rest && rest.length>0){
+            const account = rest[0];
+            const entry  = Decrypt(account.key, pKey)
+                //CryptoJS.AES.decrypt(account.key, pKey);
+            if(!entry || !entry.key){
+                return Promise.reject("Invalid Password!")
+            }
+            this.pKey = pKey;
+            this.accountId = accountId
+            return Promise.resolve(entry.key)
+        }
+        return Promise.reject("account not find!")
+    }
+
+    async getSignKey(){
+        if(!this.pKey){
+            return Promise.reject("wallet is unlock!")
+        }
+        const rest = await this.unLock(this.accountId)
+        return rest;
     }
 
     getP(){
-        return this.p;
+        return this.pKey;
     }
 }
 

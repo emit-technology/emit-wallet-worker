@@ -258,7 +258,8 @@ class Service {
         let keystore:any = {};
         if(accountInfo.createType == CreateType.PrivateKey){
             // const privateKey = await this.exportPrivateKey(accountId,password)
-            const privateKeyBytes = toBuffer(walletEx.getSignKey());
+            const privateKey = await walletEx.getSignKey()
+            const privateKeyBytes = toBuffer(privateKey);
             const wallet = Wallet.fromPrivateKey(privateKeyBytes)
             keystore = await wallet.toV3(password);
             keystore.address = getBase58CheckAddress(getAddressFromPriKey(privateKeyBytes));
@@ -275,7 +276,8 @@ class Service {
             //     return Promise.reject(`No available keystore`)
             // }
             const wallet:IWallet  = new TronWallet()
-            keystore = await wallet.importMnemonic(walletEx.getSignKey(),password);
+            const privateKey = await walletEx.getSignKey()
+            keystore = await wallet.importMnemonic(privateKey,password);
         }
 
         // const mnemonic = await this.exportMnemonic(accountId,password);
@@ -310,26 +312,39 @@ class Service {
             return Promise.reject(`Chain:${ChainType[chainType]} is not exist!`)
         }
         const accountInfo = await this.accountInfo(accountId);
-        if(accountInfo.createType == CreateType.PrivateKey){
-            const privateKeyString = await this.exportPrivateKey(accountId,password)
-            walletEx.setSignKey(privateKeyString,password)
-        }else if(accountInfo.createType == CreateType.Mnemonic){
-            const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
-                accountId: accountId,
-                chainType: ChainType.SERO
-            });
-            let mnemonic = "";
-            if (restSero && restSero.length > 0) {
-                mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
+        if(accountInfo.key){
+            const text = await walletEx.unLock(accountId,password)
+            if(text){
+                return Promise.resolve(true)
             }
-            walletEx.setSignKey(mnemonic,password)
+            return Promise.reject(false)
+        }else{
+            if(accountInfo.createType == CreateType.PrivateKey){
+                const privateKeyString = await this.exportPrivateKey(accountId,password)
+                await walletEx.setSignKey(privateKeyString,password,accountId)
+            }else if(accountInfo.createType == CreateType.Mnemonic){
+                const restSero: Array<KeystoreWrapModel> = await keyStoreCollection.find({
+                    accountId: accountId,
+                    chainType: ChainType.SERO
+                });
+                let mnemonic = "";
+                if (restSero && restSero.length > 0) {
+                    mnemonic = await new EthWallet(restSero[0].keystore).exportMnemonic(password);
+                }
+                await walletEx.setSignKey(mnemonic,password,accountId)
+            }
         }
         return Promise.resolve(true)
     }
 
     isLocked(){
-        const signKey = walletEx.getSignKey()
-        return !signKey
+        const p = walletEx.getP()
+        return !p
+    }
+
+    lockAccount(){
+        walletEx.lock()
+        return true
     }
 }
 
@@ -350,10 +365,15 @@ self.addEventListener('message', e => {
                 })
                 break;
             case Method.importMnemonic:
-                service.importMnemonic(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((rest: any) => {
-                    walletEx.setSignKey(message.data.mnemonic,message.data.password)
-                    message.result = rest;
-                    sendMessage(message)
+                service.importMnemonic(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((accountId: any) => {
+                    walletEx.setSignKey(message.data.mnemonic,message.data.password,accountId).then(()=>{
+                        message.result = accountId;
+                        sendMessage(message)
+                    }).catch((e:any)=>{
+                        console.error(e)
+                        message.error = typeof e == "string" ? e : e.message;
+                        sendMessage(message)
+                    })
                 }).catch((e: any) => {
                     console.error(e)
                     message.error = typeof e == "string" ? e : e.message;
@@ -411,10 +431,15 @@ self.addEventListener('message', e => {
                 })
                 break
             case Method.importPrivateKey:
-                service.importPrivateKey(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((rest: any) => {
-                    walletEx.setSignKey(message.data.mnemonic,message.data.password)
-                    message.result = rest
-                    sendMessage(message)
+                service.importPrivateKey(message.data.mnemonic, message.data.password, message.data.name, message.data.passwordHint, message.data.avatar).then((accountId: any) => {
+                    walletEx.setSignKey(message.data.mnemonic,message.data.password,accountId).then(()=>{
+                        message.result = accountId;
+                        sendMessage(message)
+                    }).catch((e:any)=>{
+                        console.error(e)
+                        message.error = typeof e == "string" ? e : e.message;
+                        sendMessage(message)
+                    })
                 }).catch((e: any) => {
                     message.error = typeof e == "string" ? e : e.message;
                     sendMessage(message)
@@ -442,6 +467,10 @@ self.addEventListener('message', e => {
                 break
             case Method.isLocked:
                 message.result = service.isLocked()
+                sendMessage(message)
+                break
+            case Method.lockWallet:
+                message.result = service.lockAccount()
                 sendMessage(message)
                 break
             default:

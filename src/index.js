@@ -83,6 +83,10 @@ var Index = /** @class */ (function () {
         var message = { method: types_1.Method.isLocked, data: {} };
         this.handlerMsg(message, cb);
     };
+    Index.prototype.lockWallet = function (cb) {
+        var message = { method: types_1.Method.lockWallet, data: {} };
+        this.handlerMsg(message, cb);
+    };
     return Index;
 }());
 var service = new Index();

@@ -101,6 +101,12 @@ class Index {
         let message: any = {method: Method.isLocked, data: {}}
         this.handlerMsg(message, cb);
     }
+
+    lockWallet(cb){
+        let message: any = {method: Method.lockWallet, data: {}}
+        this.handlerMsg(message, cb);
+    }
+
 }
 
 interface importMnemonicProps {

@@ -69,22 +69,27 @@ var TronWallet = /** @class */ (function (_super) {
     function TronWallet(keystore) {
         var _this = _super.call(this) || this;
         _this.getWallet = function () { return __awaiter(_this, void 0, void 0, function () {
+            var signKey;
             return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise((function (resolve, reject) {
-                        var signKey = wallet_2.walletEx.getSignKey();
-                        if (!signKey) {
-                            reject("wallet was unlock!");
-                        }
-                        if (signKey && signKey.split(" ").length == 12) {
-                            var seedBuffer = bip39.mnemonicToSeedSync(signKey);
-                            var walletEth = ethereumjs_wallet_1.hdkey.fromMasterSeed(seedBuffer);
-                            var acct = walletEth.derivePath("m/44'/195'/0'/0/0");
-                            resolve(acct.getWallet());
-                        }
-                        else {
-                            resolve(ethereumjs_wallet_2.default.fromPrivateKey(utils_1.toBuffer(signKey)));
-                        }
-                    }))];
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, wallet_2.walletEx.getSignKey()];
+                    case 1:
+                        signKey = _a.sent();
+                        return [2 /*return*/, new Promise((function (resolve, reject) {
+                                if (!signKey) {
+                                    reject("wallet was unlock!");
+                                }
+                                if (signKey && signKey.split(" ").length == 12) {
+                                    var seedBuffer = bip39.mnemonicToSeedSync(signKey);
+                                    var walletEth = ethereumjs_wallet_1.hdkey.fromMasterSeed(seedBuffer);
+                                    var acct = walletEth.derivePath("m/44'/195'/0'/0/0");
+                                    resolve(acct.getWallet());
+                                }
+                                else {
+                                    resolve(ethereumjs_wallet_2.default.fromPrivateKey(utils_1.toBuffer(signKey)));
+                                }
+                            }))];
+                }
             });
         }); };
         _this.exportMnemonic = function (password) { return __awaiter(_this, void 0, void 0, function () {

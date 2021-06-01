@@ -20,8 +20,8 @@ class EthWallet extends IWallet{
 
 
     getWallet = async (): Promise<Wallet> => {
+        const signKey = await walletEx.getSignKey();
         return new Promise(((resolve, reject) => {
-            const signKey = walletEx.getSignKey();
             if(!signKey){
                 reject("wallet was unlock!")
             }

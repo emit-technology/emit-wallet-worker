@@ -73,7 +73,9 @@ export enum Method {
     powStop,
     powState,
     powClear,
-    powInit
+    powInit,
+
+    lockWallet
 }
 
 export enum ChainType {
@@ -90,6 +92,7 @@ export interface AccountModel {
     avatar?: string
     addresses: any //{chainType:address}
     createType: CreateType
+    key?:string
 }
 
 export interface KeystoreWrapModel {
