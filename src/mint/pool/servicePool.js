@@ -36,11 +36,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var types_1 = require("../types");
-var collection_1 = require("../collection");
+var types_1 = require("../../types");
+var collection_1 = require("../../collection");
 var bignumber_js_1 = require("bignumber.js");
-var rpc_1 = require("../rpc");
-var config_1 = require("../config");
+var rpc_1 = require("../../rpc");
+var config_1 = require("../../config");
 var BN = require("bn.js");
 var keccak256 = require("keccak256");
 var MAX_UINT256 = new BN(2).pow(new BN(256)).sub(new BN(1));
@@ -51,77 +51,64 @@ var Service = /** @class */ (function () {
     function Service() {
         var _this = this;
         this.init = function (param) { return __awaiter(_this, void 0, void 0, function () {
-            var _serail, hashseed, rest, remote, e_1, d, seed, buf, ne;
+            var _serail, hashseed, rest, restAcc, account, d, seed, buf, ne;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        if (this.temp.state == types_1.MintState.running) {
+                            return [2 /*return*/];
+                        }
                         _serail = new bignumber_js_1.default(param.index).plus(1);
                         hashseed = this.genHashSeed(param.phash, param.address, "0x" + _serail.toString(16));
                         return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: param.accountScenes })];
                     case 1:
                         rest = _a.sent();
-                        this.temp = param;
-                        remote = {};
-                        _a.label = 2;
+                        this.temp.phash = param.phash;
+                        this.temp.address = param.address;
+                        this.temp.index = param.index;
+                        this.temp.scenes = param.scenes;
+                        this.temp.accountScenes = param.accountScenes;
+                        this.temp.accountId = param.accountId;
+                        this.temp.isPool = param.isPool;
+                        this.temp.taskId = param.taskId;
+                        this.temp.period = param.period;
+                        return [4 /*yield*/, collection_1.accountCollection.find({ accountId: this.temp.accountId })];
                     case 2:
-                        _a.trys.push([2, 4, , 5]);
-                        return [4 /*yield*/, rpc_1.default.post(config_1.default.NE_HOST + "/hashrate/one", {
-                                phash: param.phash.slice(2),
-                                shortAddress: param.address.slice(2),
-                                serial: _serail,
-                                scenes: param.scenes
-                            })];
-                    case 3:
-                        remote = _a.sent();
-                        return [3 /*break*/, 5];
-                    case 4:
-                        e_1 = _a.sent();
-                        console.error(e_1);
-                        return [3 /*break*/, 5];
-                    case 5:
-                        if (!(rest && rest.length > 0)) return [3 /*break*/, 7];
+                        restAcc = _a.sent();
+                        if (restAcc && restAcc.length > 0) {
+                            account = restAcc[0];
+                            this.address = account.addresses[types_1.ChainType.SERO];
+                        }
+                        if (!(rest && rest.length > 0)) return [3 /*break*/, 4];
                         d = rest[0];
                         seed = this.genHashSeed(d.phash, d.address, "0x" + new bignumber_js_1.default(d.index).plus(1).toString(16));
                         buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
                         ne = this.calcNE(seed, buf);
-                        if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne) {
-                            if (remote && remote.shortAddress) {
-                                d.ne = remote.lastNe;
-                                d.nonce = remote.nonce;
-                            }
-                            else {
-                                d.ne = "0";
-                                d.nonce = "0";
-                            }
-                        }
-                        else {
-                            if (remote && remote.shortAddress && new bignumber_js_1.default(d.ne).toNumber() < new bignumber_js_1.default(remote.lastNe).toNumber()) {
-                                d.ne = remote.lastNe;
-                                d.nonce = remote.nonce;
-                            }
+                        console.log(d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne || d.period != param.period, d.period != param.period, d.period, param.period);
+                        if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne || d.period != param.period) {
+                            d.ne = "0";
+                            d.nonce = "0";
                         }
                         d.phash = param.phash;
                         d.address = param.address;
                         d.index = param.index;
                         d.scenes = param.scenes;
                         d.hashseed = hashseed;
+                        d.period = param.period;
+                        // this.temp.nonce = d.nonce;
                         this.temp.ne = d.ne ? d.ne : "0";
                         return [4 /*yield*/, collection_1.mintCollections.update(d)];
-                    case 6:
+                    case 3:
                         _a.sent();
-                        return [3 /*break*/, 9];
-                    case 7:
+                        return [3 /*break*/, 6];
+                    case 4:
                         this.temp.ne = "0";
                         this.temp.timestamp = Date.now();
-                        if (remote && remote.shortAddress) {
-                            this.temp.ne = remote.lastNe;
-                            this.temp.nonce = remote.nonce;
-                        }
                         return [4 /*yield*/, collection_1.mintCollections.insert(this.temp)];
-                    case 8:
+                    case 5:
                         _a.sent();
-                        _a.label = 9;
-                    case 9:
+                        _a.label = 6;
+                    case 6:
                         this.temp.hashseed = hashseed;
                         this.temp.nonce = param.nonce ? param.nonce : random(0, Math.pow(2, 64)).toString();
                         this.temp.timestamp = Date.now();
@@ -151,7 +138,9 @@ var Service = /** @class */ (function () {
                         _a.sent();
                         this.execute();
                         _a.label = 3;
-                    case 3: return [2 /*return*/];
+                    case 3:
+                        this.fetchInterVal();
+                        return [2 /*return*/];
                 }
             });
         }); };
@@ -161,6 +150,7 @@ var Service = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         this.temp.state = types_1.MintState.stop;
+                        clearInterval(this.fetchInterValId);
                         return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: accountScenes })];
                     case 1:
                         rest = _a.sent();
@@ -191,6 +181,13 @@ var Service = /** @class */ (function () {
                         if (this.temp.hashrate) {
                             this.temp.hashrate.o = new bignumber_js_1.default(this.temp.nonce).minus(this.temp.hashrate.h).dividedBy((Date.now() - this.temp.hashrate.t) / 1000).toNumber();
                         }
+                        else {
+                            this.temp.hashrate = {
+                                h: this.temp.nonce,
+                                t: this.temp.timestamp,
+                                o: new bignumber_js_1.default(this.temp.nonce).minus(this.temp.nonce).dividedBy((Date.now() - this.temp.timestamp) / 1000).toNumber()
+                            };
+                        }
                         if (rest && rest.length > 0) {
                             this.temp.nonceDes = rest[0].nonce;
                         }
@@ -198,8 +195,104 @@ var Service = /** @class */ (function () {
                 }
             });
         }); };
+        this.fetchInterVal = function () {
+            if (_this.fetchInterValId) {
+                clearInterval(_this.fetchInterValId);
+            }
+            _this.fetchInterValId = setInterval(function () {
+                _this.reFetchPImage().then(function (mintData) {
+                    _this.stop(_this.temp.accountScenes).then(function () {
+                        _this.init(mintData).then(function () {
+                            _this.start(_this.temp.accountScenes).catch(function (e) {
+                                console.log(e);
+                            }).catch(function (e) {
+                                setTimeout(function () {
+                                    _this.start(_this.temp.accountScenes).catch(function (e) {
+                                        console.log(e);
+                                    });
+                                }, 10 * 1000);
+                            });
+                        }).catch(function (e) {
+                            console.log(e);
+                            setTimeout(function () {
+                                _this.start(_this.temp.accountScenes).catch(function (e) {
+                                    console.log(e);
+                                });
+                            }, 10 * 1000);
+                        });
+                    }).catch(function (e) {
+                        console.log(e);
+                    });
+                }).catch(function (e) {
+                    // not need restart miner
+                });
+            }, 20 * 1000);
+        };
+        this.reFetchPImage = function () { return __awaiter(_this, void 0, void 0, function () {
+            var rest, mintData;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, rpc_1.default.jsonRpc([config_1.default.POOL_HOST, this.address].join("/"), "epoch_taskImage", [new bignumber_js_1.default(this.temp.taskId).toNumber()])];
+                    case 1:
+                        rest = _a.sent();
+                        if (!rest) {
+                            return [2 /*return*/, Promise.reject("rest is null")];
+                        }
+                        //owner, scenes_,serial,bytes32 phash,uint256 minNE
+                        if (!rest || rest.length == 0) {
+                            return [2 /*return*/];
+                        }
+                        if (rest[0] != this.temp.address
+                            || "0x" + new bignumber_js_1.default(rest[2]).toString(16) != this.temp.index
+                            || rest[3] != this.temp.phash
+                            || rest[5] != this.temp.period) {
+                            mintData = this.temp;
+                            mintData.phash = rest[3];
+                            mintData.index = "0x" + new bignumber_js_1.default(rest[2]).toString(16);
+                            mintData.address = rest[0];
+                            mintData.period = rest[5];
+                            return [2 /*return*/, Promise.resolve(mintData)];
+                        }
+                        return [2 /*return*/, Promise.reject(false)];
+                }
+            });
+        }); };
+        this.subWork = function (ne, nonce) { return __awaiter(_this, void 0, void 0, function () {
+            var param_1;
+            var _this = this;
+            return __generator(this, function (_a) {
+                if (new bignumber_js_1.default(ne).toNumber() > 0) {
+                    param_1 = {
+                        ne: "0x" + new bignumber_js_1.default(ne).toString(16),
+                        nonce: "0x" + new bignumber_js_1.default(nonce).toString(16),
+                        phash: this.temp.phash,
+                        serial: new bignumber_js_1.default(this.temp.index).toNumber(),
+                        taskId: new bignumber_js_1.default(this.temp.taskId).toNumber()
+                    };
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            rpc_1.default.jsonRpc([config_1.default.POOL_HOST, _this.address].join("/"), "epoch_submitWork", [JSON.stringify(param_1)]).then(function () {
+                                _this.temp.timestamp = Date.now();
+                                _this.temp.nonce = random(0, Math.pow(2, 64)).toString();
+                                _this.temp.hashrate = {
+                                    h: _this.temp.nonce,
+                                    t: _this.temp.timestamp,
+                                    o: 0
+                                };
+                                resolve(true);
+                            }).catch(function (e) {
+                                var err = typeof e == "string" ? e : e.message;
+                                if (err == "task has closed") {
+                                    _this.stop(_this.temp.accountScenes);
+                                }
+                                reject(e);
+                            });
+                        })];
+                }
+                return [2 /*return*/];
+            });
+        }); };
         this.run = function () { return __awaiter(_this, void 0, void 0, function () {
-            var nonce, buf, ne, rest, d, hr;
+            var nonce, buf, ne, rest, d, e_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -209,10 +302,7 @@ var Service = /** @class */ (function () {
                         }
                         buf = new BN(nonce).toArrayLike(Buffer, "be", 8);
                         ne = this.calcNE(this.temp.hashseed, buf);
-                        if (!(new bignumber_js_1.default(this.temp.ne).comparedTo(new bignumber_js_1.default(ne)) == -1)) return [3 /*break*/, 8];
-                        //TODO
-                        this.temp.ne = ne;
-                        this.temp.timestamp = Date.now();
+                        if (!(new bignumber_js_1.default(this.temp.ne).comparedTo(new bignumber_js_1.default(ne)) == -1)) return [3 /*break*/, 9];
                         console.log("index=[" + this.temp.index + "], nonce=[" + this.temp.nonce + "], ne=[" + ne + "]");
                         return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: this.temp.accountScenes })];
                     case 1:
@@ -237,30 +327,16 @@ var Service = /** @class */ (function () {
                         _a.sent();
                         _a.label = 6;
                     case 6:
-                        hr = {
-                            phase: 0,
-                            address: this.temp.address.slice(2),
-                            shortAddress: this.temp.address.slice(2),
-                            phash: this.temp.phash.slice(2),
-                            serial: new bignumber_js_1.default(this.temp.index).plus(1).toNumber(),
-                            nonce: nonce,
-                            // ne: string;
-                            lastNe: new bignumber_js_1.default(this.temp.ne).toNumber(),
-                            timestamp: this.temp.hashrate.t,
-                            hashRate: this.temp.hashrate.o,
-                            scenes: this.temp.scenes
-                        };
-                        return [4 /*yield*/, rpc_1.default.post(config_1.default.NE_HOST + "/hashrate/save", hr)];
+                        _a.trys.push([6, 8, , 9]);
+                        return [4 /*yield*/, this.subWork(ne, nonce)];
                     case 7:
                         _a.sent();
-                        this.temp.nonce = random(0, Math.pow(2, 64)).toString();
-                        this.temp.hashrate = {
-                            h: this.temp.nonce,
-                            t: this.temp.timestamp,
-                            o: 0
-                        };
-                        _a.label = 8;
-                    case 8: return [2 /*return*/, Promise.resolve()];
+                        return [3 /*break*/, 9];
+                    case 8:
+                        e_1 = _a.sent();
+                        console.error(e_1);
+                        return [3 /*break*/, 9];
+                    case 9: return [2 /*return*/, Promise.resolve()];
                 }
             });
         }); };
@@ -349,9 +425,14 @@ var Service = /** @class */ (function () {
             });
         }).catch(function (e) {
             var err = typeof e == "string" ? e : e.message;
-            console.log("$execute >>> [" + err + "]");
+            console.log("execute err >>> [" + err + "]");
+            console.error(e);
             setTimeout(function () {
-                // this.execute()
+                _this.stop(_this.temp.accountScenes).then(function () {
+                    _this.init(_this.temp).then(function () {
+                        _this.start(_this.temp.accountScenes);
+                    });
+                });
             }, 10 * 1000);
         });
     };
@@ -363,4 +444,4 @@ function sendMessage(message) {
     self.postMessage(message);
 }
 exports.default = Service;
-//# sourceMappingURL=service.js.map
+//# sourceMappingURL=servicePool.js.map

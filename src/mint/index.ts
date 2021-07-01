@@ -9,18 +9,23 @@ abstract class Mint {
         this.handlerMsg(message, cb);
     }
 
-    mintStop = (accountId: string, cb: Function) => {
-        let message: any = {method: Method.powStop, data: accountId}
+    mintStop = (accountScenes: string, cb: Function) => {
+        let message: any = {method: Method.powStop, data: accountScenes}
         this.handlerMsg(message, cb);
     }
 
-    mintState = (accountId: string, cb: Function) => {
-        let message: any = {method: Method.powState, data: accountId}
+    mintState = (accountScenes: string, cb: Function) => {
+        let message: any = {method: Method.powState, data: accountScenes}
         this.handlerMsg(message, cb);
     }
 
-    mintStart = (cb: Function) => {
-        let message: any = {method: Method.powStart,data:{}}
+    mintStart = (accountScenes: string,cb: Function) => {
+        let message: any = {method: Method.powStart,data:accountScenes}
+        this.handlerMsg(message, cb);
+    }
+
+    getEpochPollKeys = (cb: Function) => {
+        let message: any = {method: Method.getEpochPollKeys}
         this.handlerMsg(message, cb);
     }
 

@@ -75,7 +75,9 @@ export enum Method {
     powClear,
     powInit,
 
-    lockWallet
+    lockWallet,
+
+    getEpochPollKeys
 }
 
 export enum ChainType {
@@ -135,11 +137,14 @@ export interface MintData {
     nonceDes?: string
     timestamp?: number
     state?: MintState
+    isPool?:boolean
+    taskId?:number
     hashrate?: {
         h:string
         t:number
         o:number
-    }
+    },
+    period?:any
 }
 
 export enum MintState {
@@ -152,4 +157,19 @@ export enum MinerScenes {
     _,
     altar,
     chaos
+}
+
+export interface HashRate {
+    // id: number;
+    phase: number|undefined;
+    address: string;
+    shortAddress: string;
+    phash: string|undefined;
+    serial: number;
+    nonce: string;
+    // ne: string;
+    lastNe: number
+    timestamp: number;
+    hashRate?: number
+    scenes?:any
 }

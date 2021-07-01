@@ -1,8 +1,8 @@
-import {HashRate, Message, Method, MintData, MintState} from "../types";
-import {mintCollections} from "../collection";
+import {AccountModel, ChainType, Message, Method, MintData, MintState} from "../../types";
+import {accountCollection, mintCollections} from "../../collection";
 import BigNumber from "bignumber.js";
-import rpc from "../rpc";
-import config from "../config";
+import rpc from "../../rpc";
+import config from "../../config";
 
 const BN = require("bn.js");
 const keccak256 = require("keccak256");
@@ -16,9 +16,13 @@ function random(min: number, max: number) {
 class Service {
 
     temp: MintData
+    address:string
+
+    fetchInterValId:any;
 
     constructor() {
         this.temp = {ne: "0", accountId: "", accountScenes: "", scenes: "", phash: "", address: "", index: ""}
+
     }
 
     private genHashSeed(_phash: string, _addr: string, _index: string): string {
@@ -45,61 +49,52 @@ class Service {
     }
 
     init = async (param: MintData) => {
-        // if(this.temp.state == MintState.running){
-        //     return
-        // }
+        if(this.temp.state == MintState.running){
+            return
+        }
         const _serail = new BigNumber(param.index).plus(1);
         const hashseed = this.genHashSeed(param.phash, param.address, "0x"+_serail.toString(16));
         const rest: any = await mintCollections.find({accountScenes: param.accountScenes});
-        this.temp = param;
 
-        let remote:any = {}
-        try{
-            remote = await rpc.post(`${config.NE_HOST}/hashrate/one`,{
-                phash:param.phash.slice(2),
-                shortAddress:param.address.slice(2),
-                serial:_serail,
-                scenes: param.scenes
-            })
-        }catch (e){
-            console.error(e)
+        this.temp.phash = param.phash;
+        this.temp.address = param.address;
+        this.temp.index = param.index;
+        this.temp.scenes = param.scenes;
+        this.temp.accountScenes = param.accountScenes;
+        this.temp.accountId = param.accountId;
+        this.temp.isPool = param.isPool;
+        this.temp.taskId = param.taskId;
+        this.temp.period = param.period;
+
+        const restAcc = await accountCollection.find({accountId:this.temp.accountId})
+        if (restAcc && restAcc.length > 0) {
+            const account: AccountModel = restAcc[0];
+            this.address = account.addresses[ChainType.SERO]
         }
 
         if (rest && rest.length > 0) {
             const d: MintData = rest[0];
-
             const seed = this.genHashSeed(d.phash, d.address, "0x"+new BigNumber(d.index).plus(1).toString(16));
             const buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
             const ne = this.calcNE(seed,buf)
-
-            if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne) {
-                if(remote && remote.shortAddress){
-                    d.ne = remote.lastNe;
-                    d.nonce = remote.nonce;
-                }else{
-                    d.ne = "0"
-                    d.nonce = "0"
-                }
-            }else{
-                if(remote && remote.shortAddress && new BigNumber(d.ne).toNumber()<new BigNumber(remote.lastNe).toNumber()){
-                    d.ne = remote.lastNe;
-                    d.nonce = remote.nonce;
-                }
+            console.log(d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne  || d.period != param.period, d.period != param.period,d.period,param.period)
+            if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne  || d.period != param.period) {
+                d.ne = "0"
+                d.nonce = "0"
             }
             d.phash = param.phash;
             d.address = param.address;
             d.index = param.index;
             d.scenes = param.scenes;
             d.hashseed = hashseed;
+            d.period=param.period;
+            // this.temp.nonce = d.nonce;
             this.temp.ne = d.ne ? d.ne : "0";
+
             await mintCollections.update(d)
         } else {
             this.temp.ne = "0"
             this.temp.timestamp = Date.now();
-            if(remote && remote.shortAddress){
-                this.temp.ne = remote.lastNe;
-                this.temp.nonce = remote.nonce;
-            }
             await mintCollections.insert(this.temp)
         }
 
@@ -113,7 +108,7 @@ class Service {
         };
     }
 
-    start = async (accountScenes:string) => {
+    start = async (accountScenes: string) => {
         console.log("Miner started!")
         const rest: any = await mintCollections.find({accountScenes: accountScenes});
         if (rest && rest.length > 0) {
@@ -122,11 +117,14 @@ class Service {
             await mintCollections.update(d)
             this.execute();
         }
+        this.fetchInterVal();
         return
     }
 
     stop = async (accountScenes: string) => {
         this.temp.state = MintState.stop;
+        clearInterval(this.fetchInterValId);
+
         const rest: any = await mintCollections.find({accountScenes: accountScenes});
         if (rest && rest.length > 0) {
             const d: MintData = rest[0];
@@ -145,11 +143,106 @@ class Service {
         }
         if(this.temp.hashrate){
             this.temp.hashrate.o = new BigNumber(this.temp.nonce).minus(this.temp.hashrate.h).dividedBy((Date.now()-this.temp.hashrate.t)/1000).toNumber()
+        }else{
+            this.temp.hashrate={
+                h:this.temp.nonce,
+                t:this.temp.timestamp,
+                o:new BigNumber(this.temp.nonce).minus(this.temp.nonce).dividedBy((Date.now()-this.temp.timestamp)/1000).toNumber()
+            }
         }
         if (rest && rest.length > 0) {
             this.temp.nonceDes = rest[0].nonce;
         }
         return this.temp
+    }
+
+    fetchInterVal = ()=>{
+        if(this.fetchInterValId){
+            clearInterval(this.fetchInterValId)
+        }
+        this.fetchInterValId = setInterval(()=>{
+            this.reFetchPImage().then((mintData:MintData)=>{
+                this.stop(this.temp.accountScenes).then(()=>{
+                    this.init(mintData).then(()=>{
+                        this.start(this.temp.accountScenes).catch(e=>{
+                            console.log(e)
+                        }).catch(e=>{
+                            setTimeout(()=>{
+                                this.start(this.temp.accountScenes).catch(e=>{
+                                    console.log(e)
+                                })
+                            },10*1000)
+                        })
+                    }).catch(e=>{
+                        console.log(e)
+                        setTimeout(()=>{
+                            this.start(this.temp.accountScenes).catch(e=>{
+                                console.log(e)
+                            })
+                        },10*1000)
+                    })
+                }).catch(e=>{
+                    console.log(e)
+                })
+            }).catch(e=>{
+                // not need restart miner
+            })
+        },20 * 1000)
+    }
+
+    reFetchPImage = async ():Promise<MintData> =>{
+        const rest:any = await rpc.jsonRpc([config.POOL_HOST,this.address].join("/"),"epoch_taskImage",[new BigNumber(this.temp.taskId).toNumber()])
+        if(!rest){
+            return Promise.reject("rest is null")
+        }
+        //owner, scenes_,serial,bytes32 phash,uint256 minNE
+        if(!rest || rest.length == 0 ){
+            return
+        }
+        if(rest[0] != this.temp.address
+            || "0x"+new BigNumber(rest[2]).toString(16) != this.temp.index
+            || rest[3] != this.temp.phash
+            || rest[5] != this.temp.period
+        ){
+            const mintData:MintData = this.temp
+            mintData.phash = rest[3];
+            mintData.index = "0x"+new BigNumber(rest[2]).toString(16);
+            mintData.address = rest[0];
+            mintData.period = rest[5];
+            return Promise.resolve(mintData)
+        }
+
+        return Promise.reject(false)
+    }
+
+    subWork = async (ne:any,nonce:any)=>{
+        if(new BigNumber(ne).toNumber()>0){
+            const param = {
+                ne: "0x"+new BigNumber(ne).toString(16),
+                nonce:"0x"+new BigNumber(nonce).toString(16),
+                phash:this.temp.phash,
+                serial: new BigNumber(this.temp.index).toNumber(),
+                taskId:new BigNumber(this.temp.taskId).toNumber()
+            }
+            return new Promise((resolve, reject)=> {
+                rpc.jsonRpc([config.POOL_HOST,this.address].join("/"),"epoch_submitWork",[JSON.stringify(param)]).then(()=>{
+                    this.temp.timestamp = Date.now()
+                    this.temp.nonce = random(0, 2 ** 64).toString()
+                    this.temp.hashrate = {
+                        h:this.temp.nonce,
+                        t:this.temp.timestamp,
+                        o:0
+                    };
+                    resolve(true)
+                }).catch((e:any)=>{
+                    const err = typeof e == "string"?e:e.message;
+                    if(err == "task has closed"){
+                        this.stop(this.temp.accountScenes)
+                    }
+                    reject(e)
+                })
+            })
+        }
     }
 
     execute() {
@@ -165,9 +258,14 @@ class Service {
             })
         }).catch((e: any) => {
             const err = typeof e == "string" ? e : e.message;
-            console.log(`$execute >>> [${err}]`)
+            console.log(`execute err >>> [${err}]`)
+            console.error(e)
             setTimeout(() => {
-                // this.execute()
+                this.stop(this.temp.accountScenes).then(()=>{
+                    this.init(this.temp).then(()=>{
+                        this.start(this.temp.accountScenes)
+                    })
+                })
             }, 10 * 1000)
         })
     }
@@ -180,10 +278,6 @@ class Service {
         const buf = new BN(nonce).toArrayLike(Buffer, "be", 8);
         const ne: any = this.calcNE(this.temp.hashseed, buf);
         if (new BigNumber(this.temp.ne).comparedTo(new BigNumber(ne)) == -1) {
-            //TODO
-            this.temp.ne = ne;
-            this.temp.timestamp = Date.now()
-
             console.log(`index=[${this.temp.index}], nonce=[${this.temp.nonce}], ne=[${ne}]`)
             const rest: any = await mintCollections.find({accountScenes: this.temp.accountScenes});
             if (rest && rest.length > 0) {
@@ -201,28 +295,11 @@ class Service {
                 this.temp.timestamp = Date.now();
                 await mintCollections.insert(this.temp)
             }
-
-            const hr:HashRate = {
-                phase: 0,
-                address: this.temp.address.slice(2),
-                shortAddress: this.temp.address.slice(2),
-                phash: this.temp.phash.slice(2),
-                serial: new BigNumber(this.temp.index).plus(1).toNumber(),
-                nonce: nonce,
-                // ne: string;
-                lastNe: new BigNumber(this.temp.ne).toNumber(),
-                timestamp: this.temp.hashrate.t,
-                hashRate: this.temp.hashrate.o,
-                scenes:this.temp.scenes
+            try{
+                await this.subWork(ne,nonce)
+            }catch (e){
+                console.error(e)
             }
-            await rpc.post(`${config.NE_HOST}/hashrate/save`,hr)
-
-            this.temp.nonce = random(0, 2 ** 64).toString()
-            this.temp.hashrate = {
-                h:this.temp.nonce,
-                t:this.temp.timestamp,
-                o:0
-            };
         }
         return Promise.resolve();
     }

@@ -52,6 +52,32 @@ var Rpc = /** @class */ (function () {
             });
         }); };
     }
+    Rpc.prototype.jsonRpc = function (host, method, params) {
+        return __awaiter(this, void 0, void 0, function () {
+            var data;
+            return __generator(this, function (_a) {
+                data = {
+                    id: 0,
+                    jsonrpc: '2.0',
+                    method: method,
+                    params: params,
+                };
+                return [2 /*return*/, new Promise(function (resolve, reject) {
+                        axios_1.default.post(host, data).then(function (resp) {
+                            if (resp.data.error) {
+                                reject(typeof resp.data.error === "string" ? resp.data.error : resp.data.error.message);
+                            }
+                            else {
+                                resolve(resp.data.result);
+                            }
+                        }).catch(function (e) {
+                            console.error("rpc post err: ", e);
+                            reject(e);
+                        });
+                    })];
+            });
+        });
+    };
     return Rpc;
 }());
 var rpc = new Rpc();

@@ -23,6 +23,7 @@ var Method;
     Method[Method["powClear"] = 17] = "powClear";
     Method[Method["powInit"] = 18] = "powInit";
     Method[Method["lockWallet"] = 19] = "lockWallet";
+    Method[Method["getEpochPollKeys"] = 20] = "getEpochPollKeys";
 })(Method = exports.Method || (exports.Method = {}));
 var ChainType;
 (function (ChainType) {

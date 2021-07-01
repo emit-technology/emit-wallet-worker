@@ -8,16 +8,20 @@ var Mint = /** @class */ (function () {
             var message = { method: types_1.Method.powInit, data: data };
             _this.handlerMsg(message, cb);
         };
-        this.mintStop = function (accountId, cb) {
-            var message = { method: types_1.Method.powStop, data: accountId };
+        this.mintStop = function (accountScenes, cb) {
+            var message = { method: types_1.Method.powStop, data: accountScenes };
             _this.handlerMsg(message, cb);
         };
-        this.mintState = function (accountId, cb) {
-            var message = { method: types_1.Method.powState, data: accountId };
+        this.mintState = function (accountScenes, cb) {
+            var message = { method: types_1.Method.powState, data: accountScenes };
             _this.handlerMsg(message, cb);
         };
-        this.mintStart = function (cb) {
-            var message = { method: types_1.Method.powStart, data: {} };
+        this.mintStart = function (accountScenes, cb) {
+            var message = { method: types_1.Method.powStart, data: accountScenes };
+            _this.handlerMsg(message, cb);
+        };
+        this.getEpochPollKeys = function (cb) {
+            var message = { method: types_1.Method.getEpochPollKeys };
             _this.handlerMsg(message, cb);
         };
     }
