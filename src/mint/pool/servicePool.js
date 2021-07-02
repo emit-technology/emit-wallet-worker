@@ -51,7 +51,7 @@ var Service = /** @class */ (function () {
     function Service() {
         var _this = this;
         this.init = function (param) { return __awaiter(_this, void 0, void 0, function () {
-            var _serail, hashseed, rest, restAcc, account, d, seed, buf, ne;
+            var _serail, hashseed, rest, restAcc, account, d, seed, buf, ne, e_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -72,6 +72,7 @@ var Service = /** @class */ (function () {
                         this.temp.isPool = param.isPool;
                         this.temp.taskId = param.taskId;
                         this.temp.period = param.period;
+                        this.temp.minNE = param.minNE;
                         return [4 /*yield*/, collection_1.accountCollection.find({ accountId: this.temp.accountId })];
                     case 2:
                         restAcc = _a.sent();
@@ -79,7 +80,7 @@ var Service = /** @class */ (function () {
                             account = restAcc[0];
                             this.address = account.addresses[types_1.ChainType.SERO];
                         }
-                        if (!(rest && rest.length > 0)) return [3 /*break*/, 4];
+                        if (!(rest && rest.length > 0)) return [3 /*break*/, 8];
                         d = rest[0];
                         seed = this.genHashSeed(d.phash, d.address, "0x" + new bignumber_js_1.default(d.index).plus(1).toString(16));
                         buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
@@ -97,20 +98,32 @@ var Service = /** @class */ (function () {
                         d.period = param.period;
                         // this.temp.nonce = d.nonce;
                         this.temp.ne = d.ne ? d.ne : "0";
-                        return [4 /*yield*/, collection_1.mintCollections.update(d)];
+                        if (!(param.minNE && new bignumber_js_1.default(d.ne).toNumber() >= new bignumber_js_1.default(param.minNE).toNumber())) return [3 /*break*/, 6];
+                        _a.label = 3;
                     case 3:
+                        _a.trys.push([3, 5, , 6]);
+                        return [4 /*yield*/, this.subWork(d.ne, d.nonce)];
+                    case 4:
                         _a.sent();
                         return [3 /*break*/, 6];
-                    case 4:
+                    case 5:
+                        e_1 = _a.sent();
+                        console.error(e_1);
+                        return [3 /*break*/, 6];
+                    case 6: return [4 /*yield*/, collection_1.mintCollections.update(d)];
+                    case 7:
+                        _a.sent();
+                        return [3 /*break*/, 10];
+                    case 8:
                         this.temp.ne = "0";
                         this.temp.timestamp = Date.now();
                         return [4 /*yield*/, collection_1.mintCollections.insert(this.temp)];
-                    case 5:
+                    case 9:
                         _a.sent();
-                        _a.label = 6;
-                    case 6:
+                        _a.label = 10;
+                    case 10:
                         this.temp.hashseed = hashseed;
-                        this.temp.nonce = param.nonce ? param.nonce : random(0, Math.pow(2, 64)).toString();
+                        this.temp.nonce = random(0, Math.pow(2, 64)).toString();
                         this.temp.timestamp = Date.now();
                         this.temp.hashrate = {
                             h: this.temp.nonce,
@@ -251,6 +264,7 @@ var Service = /** @class */ (function () {
                             mintData.index = "0x" + new bignumber_js_1.default(rest[2]).toString(16);
                             mintData.address = rest[0];
                             mintData.period = rest[5];
+                            mintData.minNE = rest[4];
                             return [2 /*return*/, Promise.resolve(mintData)];
                         }
                         return [2 /*return*/, Promise.reject(false)];
@@ -267,7 +281,8 @@ var Service = /** @class */ (function () {
                         nonce: "0x" + new bignumber_js_1.default(nonce).toString(16),
                         phash: this.temp.phash,
                         serial: new bignumber_js_1.default(this.temp.index).toNumber(),
-                        taskId: new bignumber_js_1.default(this.temp.taskId).toNumber()
+                        taskId: new bignumber_js_1.default(this.temp.taskId).toNumber(),
+                        hashRate: this.temp.hashrate && this.temp.hashrate.o ? this.temp.hashrate.o : 0
                     };
                     return [2 /*return*/, new Promise(function (resolve, reject) {
                             rpc_1.default.jsonRpc([config_1.default.POOL_HOST, _this.address].join("/"), "epoch_submitWork", [JSON.stringify(param_1)]).then(function () {
@@ -275,7 +290,7 @@ var Service = /** @class */ (function () {
                                 _this.temp.nonce = random(0, Math.pow(2, 64)).toString();
                                 _this.temp.hashrate = {
                                     h: _this.temp.nonce,
-                                    t: _this.temp.timestamp,
+                                    t: Date.now(),
                                     o: 0
                                 };
                                 resolve(true);
@@ -284,6 +299,13 @@ var Service = /** @class */ (function () {
                                 if (err == "task has closed") {
                                     _this.stop(_this.temp.accountScenes);
                                 }
+                                _this.temp.timestamp = Date.now();
+                                _this.temp.nonce = random(0, Math.pow(2, 64)).toString();
+                                _this.temp.hashrate = {
+                                    h: _this.temp.nonce,
+                                    t: Date.now(),
+                                    o: 0
+                                };
                                 reject(e);
                             });
                         })];
@@ -292,7 +314,7 @@ var Service = /** @class */ (function () {
             });
         }); };
         this.run = function () { return __awaiter(_this, void 0, void 0, function () {
-            var nonce, buf, ne, rest, d, e_1;
+            var nonce, buf, ne, rest, d, e_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -302,7 +324,7 @@ var Service = /** @class */ (function () {
                         }
                         buf = new BN(nonce).toArrayLike(Buffer, "be", 8);
                         ne = this.calcNE(this.temp.hashseed, buf);
-                        if (!(new bignumber_js_1.default(this.temp.ne).comparedTo(new bignumber_js_1.default(ne)) == -1)) return [3 /*break*/, 9];
+                        if (!(new bignumber_js_1.default(this.temp.ne).comparedTo(new bignumber_js_1.default(ne)) == -1)) return [3 /*break*/, 10];
                         console.log("index=[" + this.temp.index + "], nonce=[" + this.temp.nonce + "], ne=[" + ne + "]");
                         return [4 /*yield*/, collection_1.mintCollections.find({ accountScenes: this.temp.accountScenes })];
                     case 1:
@@ -327,16 +349,18 @@ var Service = /** @class */ (function () {
                         _a.sent();
                         _a.label = 6;
                     case 6:
-                        _a.trys.push([6, 8, , 9]);
+                        _a.trys.push([6, 9, , 10]);
+                        if (!(this.temp.minNE && new bignumber_js_1.default(this.temp.minNE).comparedTo(new bignumber_js_1.default(ne)) < 1)) return [3 /*break*/, 8];
                         return [4 /*yield*/, this.subWork(ne, nonce)];
                     case 7:
                         _a.sent();
-                        return [3 /*break*/, 9];
-                    case 8:
-                        e_1 = _a.sent();
-                        console.error(e_1);
-                        return [3 /*break*/, 9];
-                    case 9: return [2 /*return*/, Promise.resolve()];
+                        _a.label = 8;
+                    case 8: return [3 /*break*/, 10];
+                    case 9:
+                        e_2 = _a.sent();
+                        console.error(e_2);
+                        return [3 /*break*/, 10];
+                    case 10: return [2 /*return*/, Promise.resolve()];
                 }
             });
         }); };

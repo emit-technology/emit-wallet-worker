@@ -65,6 +65,7 @@ class Service {
         this.temp.isPool = param.isPool;
         this.temp.taskId = param.taskId;
         this.temp.period = param.period;
+        this.temp.minNE = param.minNE;
 
         const restAcc = await accountCollection.find({accountId:this.temp.accountId})
         if (restAcc && restAcc.length > 0) {
@@ -90,7 +91,13 @@ class Service {
             d.period=param.period;
             // this.temp.nonce = d.nonce;
             this.temp.ne = d.ne ? d.ne : "0";
-
+            if(param.minNE && new BigNumber(d.ne).toNumber() >= new BigNumber(param.minNE).toNumber()){
+                try{
+                    await this.subWork(d.ne,d.nonce)
+                }catch (e){
+                    console.error(e)
+                }
+            }
             await mintCollections.update(d)
         } else {
             this.temp.ne = "0"
@@ -99,7 +106,7 @@ class Service {
         }
 
         this.temp.hashseed = hashseed
-        this.temp.nonce = param.nonce ? param.nonce : random(0, 2 ** 64).toString()
+        this.temp.nonce = random(0, 2 ** 64).toString()
         this.temp.timestamp = Date.now();
         this.temp.hashrate = {
             h:this.temp.nonce,
@@ -209,6 +216,7 @@ class Service {
             mintData.index = "0x"+new BigNumber(rest[2]).toString(16);
             mintData.address = rest[0];
             mintData.period = rest[5];
+            mintData.minNE = rest[4];
             return Promise.resolve(mintData)
         }
 
@@ -222,7 +230,8 @@ class Service {
                 nonce:"0x"+new BigNumber(nonce).toString(16),
                 phash:this.temp.phash,
                 serial: new BigNumber(this.temp.index).toNumber(),
-                taskId:new BigNumber(this.temp.taskId).toNumber()
+                taskId:new BigNumber(this.temp.taskId).toNumber(),
+                hashRate: this.temp.hashrate && this.temp.hashrate.o ?this.temp.hashrate.o:0
             }
             return new Promise((resolve, reject)=> {
                 rpc.jsonRpc([config.POOL_HOST,this.address].join("/"),"epoch_submitWork",[JSON.stringify(param)]).then(()=>{
@@ -230,7 +239,7 @@ class Service {
                     this.temp.nonce = random(0, 2 ** 64).toString()
                     this.temp.hashrate = {
                         h:this.temp.nonce,
-                        t:this.temp.timestamp,
+                        t:Date.now(),
                         o:0
                     };
                     resolve(true)
@@ -239,6 +248,13 @@ class Service {
                     if(err == "task has closed"){
                         this.stop(this.temp.accountScenes)
                     }
+                    this.temp.timestamp = Date.now()
+                    this.temp.nonce = random(0, 2 ** 64).toString()
+                    this.temp.hashrate = {
+                        h:this.temp.nonce,
+                        t:Date.now(),
+                        o:0
+                    };
                     reject(e)
                 })
             })
@@ -296,7 +312,9 @@ class Service {
                 await mintCollections.insert(this.temp)
             }
             try{
-                await this.subWork(ne,nonce)
+                if(this.temp.minNE && new BigNumber(this.temp.minNE).comparedTo(new BigNumber(ne)) < 1){
+                    await this.subWork(ne,nonce)
+                }
             }catch (e){
                 console.error(e)
             }

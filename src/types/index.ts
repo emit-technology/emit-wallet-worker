@@ -145,6 +145,7 @@ export interface MintData {
         o:number
     },
     period?:any
+    minNE?:any
 }
 
 export enum MintState {

@@ -34,10 +34,10 @@ const service = new Test();
 
 const seed = "0x59fb2b173e04deca137312f1773e80809d5b114a08e669ccc8a5293f94056cbd";
 
-const seedss = service.genHashSeed("0x0000000000000000000000000000000000000000000000000000000000000000","0x79ba35d3ea3b0e928e54263948b91fd3cbbf0963","0x1")
+const seedss = service.genHashSeed("0x81762263612fa5ece8a2cd81c7cf39c7795087fb37f4a6d104fae523197de578","0x0417798196dfb3af3c0bf97db455ac80b47ff6cb","0x4e")
 
 
-const buf = new BN("8589989205887908286",10).toArrayLike(Buffer, "be", 8);
+const buf = new BN("2511894",10).toArrayLike(Buffer, "be", 8);
 const ne = service.calcNE(seedss,buf)
 console.log("ne",ne,seedss)
 
