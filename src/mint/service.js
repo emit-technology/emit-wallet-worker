@@ -51,7 +51,7 @@ var Service = /** @class */ (function () {
     function Service() {
         var _this = this;
         this.init = function (param) { return __awaiter(_this, void 0, void 0, function () {
-            var _serail, hashseed, rest, remote, e_1, d, seed, buf, ne;
+            var _serail, hashseed, rest, remote, remote1, remote2, e_1, d, seed, buf, ne;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -64,22 +64,50 @@ var Service = /** @class */ (function () {
                         remote = {};
                         _a.label = 2;
                     case 2:
-                        _a.trys.push([2, 4, , 5]);
+                        _a.trys.push([2, 5, , 6]);
+                        return [4 /*yield*/, rpc_1.default.post(config_1.default.NE_HOST + "/hashrate/one", {
+                                phash: param.phash.slice(2),
+                                shortAddress: param.address.slice(2),
+                                serial: _serail
+                            })];
+                    case 3:
+                        remote1 = _a.sent();
                         return [4 /*yield*/, rpc_1.default.post(config_1.default.NE_HOST + "/hashrate/one", {
                                 phash: param.phash.slice(2),
                                 shortAddress: param.address.slice(2),
                                 serial: _serail,
                                 scenes: param.scenes
                             })];
-                    case 3:
-                        remote = _a.sent();
-                        return [3 /*break*/, 5];
                     case 4:
+                        remote2 = _a.sent();
+                        if (!remote1 || remote1.code == -1) {
+                            if (!remote2 || remote2.code == -1) {
+                            }
+                            else {
+                                remote = remote2;
+                            }
+                        }
+                        else {
+                            if (!remote2 || remote2.code == -1) {
+                                remote = remote1;
+                            }
+                            else {
+                                if (new bignumber_js_1.default(remote1.lastNe).toNumber() < new bignumber_js_1.default(remote2.lastNe).toNumber()) {
+                                    remote = remote2;
+                                }
+                                else {
+                                    remote = remote1;
+                                }
+                            }
+                        }
+                        console.log(remote, "remote>>");
+                        return [3 /*break*/, 6];
+                    case 5:
                         e_1 = _a.sent();
                         console.error(e_1);
-                        return [3 /*break*/, 5];
-                    case 5:
-                        if (!(rest && rest.length > 0)) return [3 /*break*/, 7];
+                        return [3 /*break*/, 6];
+                    case 6:
+                        if (!(rest && rest.length > 0)) return [3 /*break*/, 8];
                         d = rest[0];
                         seed = this.genHashSeed(d.phash, d.address, "0x" + new bignumber_js_1.default(d.index).plus(1).toString(16));
                         buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
@@ -107,10 +135,10 @@ var Service = /** @class */ (function () {
                         d.hashseed = hashseed;
                         this.temp.ne = d.ne ? d.ne : "0";
                         return [4 /*yield*/, collection_1.mintCollections.update(d)];
-                    case 6:
-                        _a.sent();
-                        return [3 /*break*/, 9];
                     case 7:
+                        _a.sent();
+                        return [3 /*break*/, 10];
+                    case 8:
                         this.temp.ne = "0";
                         this.temp.timestamp = Date.now();
                         if (remote && remote.shortAddress) {
@@ -118,10 +146,10 @@ var Service = /** @class */ (function () {
                             this.temp.nonce = remote.nonce;
                         }
                         return [4 /*yield*/, collection_1.mintCollections.insert(this.temp)];
-                    case 8:
-                        _a.sent();
-                        _a.label = 9;
                     case 9:
+                        _a.sent();
+                        _a.label = 10;
+                    case 10:
                         this.temp.hashseed = hashseed;
                         this.temp.nonce = param.nonce ? param.nonce : random(0, Math.pow(2, 64)).toString();
                         this.temp.timestamp = Date.now();

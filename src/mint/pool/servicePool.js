@@ -85,7 +85,6 @@ var Service = /** @class */ (function () {
                         seed = this.genHashSeed(d.phash, d.address, "0x" + new bignumber_js_1.default(d.index).plus(1).toString(16));
                         buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
                         ne = this.calcNE(seed, buf);
-                        console.log(d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne || d.period != param.period, d.period != param.period, d.period, param.period);
                         if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne || d.period != param.period) {
                             d.ne = "0";
                             d.nonce = "0";
@@ -98,7 +97,7 @@ var Service = /** @class */ (function () {
                         d.period = param.period;
                         // this.temp.nonce = d.nonce;
                         this.temp.ne = d.ne ? d.ne : "0";
-                        if (!(param.minNE && new bignumber_js_1.default(d.ne).toNumber() >= new bignumber_js_1.default(param.minNE).toNumber())) return [3 /*break*/, 6];
+                        if (!(!param.minNE || param.minNE && new bignumber_js_1.default(d.ne).toNumber() >= new bignumber_js_1.default(param.minNE).toNumber())) return [3 /*break*/, 6];
                         _a.label = 3;
                     case 3:
                         _a.trys.push([3, 5, , 6]);

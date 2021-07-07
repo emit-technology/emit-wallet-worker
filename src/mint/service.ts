@@ -55,12 +55,34 @@ class Service {
 
         let remote:any = {}
         try{
-            remote = await rpc.post(`${config.NE_HOST}/hashrate/one`,{
+            const remote1 = await rpc.post(`${config.NE_HOST}/hashrate/one`,{
+                phash:param.phash.slice(2),
+                shortAddress:param.address.slice(2),
+                serial:_serail
+            })
+            const remote2 = await rpc.post(`${config.NE_HOST}/hashrate/one`,{
                 phash:param.phash.slice(2),
                 shortAddress:param.address.slice(2),
                 serial:_serail,
                 scenes: param.scenes
             })
+            if(!remote1 || remote1.code == -1){
+                if(!remote2 || remote2.code == -1){
+                }else{
+                    remote = remote2;
+                }
+            }else{
+                if(!remote2 || remote2.code == -1){
+                    remote = remote1;
+                }else{
+                    if(new BigNumber(remote1.lastNe).toNumber()<new BigNumber(remote2.lastNe).toNumber()){
+                        remote = remote2;
+                    }else{
+                        remote = remote1;
+                    }
+                }
+            }
+            console.log(remote,"remote>>")
         }catch (e){
             console.error(e)
         }

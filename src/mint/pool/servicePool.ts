@@ -78,7 +78,6 @@ class Service {
             const seed = this.genHashSeed(d.phash, d.address, "0x"+new BigNumber(d.index).plus(1).toString(16));
             const buf = new BN(d.nonce).toArrayLike(Buffer, "be", 8);
             const ne = this.calcNE(seed,buf)
-            console.log(d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne  || d.period != param.period, d.period != param.period,d.period,param.period)
             if (d.phash != param.phash || d.index != param.index || d.address != param.address || ne != d.ne  || d.period != param.period) {
                 d.ne = "0"
                 d.nonce = "0"
@@ -91,7 +90,7 @@ class Service {
             d.period=param.period;
             // this.temp.nonce = d.nonce;
             this.temp.ne = d.ne ? d.ne : "0";
-            if(param.minNE && new BigNumber(d.ne).toNumber() >= new BigNumber(param.minNE).toNumber()){
+            if(!param.minNE || param.minNE && new BigNumber(d.ne).toNumber() >= new BigNumber(param.minNE).toNumber()){
                 try{
                     await this.subWork(d.ne,d.nonce)
                 }catch (e){
