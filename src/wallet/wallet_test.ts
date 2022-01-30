@@ -27,11 +27,13 @@ const bip39 = require("bip39");
 // console.log(exportWords);
 // })
 
-const begin = Date.now();
-const seedBuffer = bip39.mnemonicToSeedSync("")
-const walletEth = hdkey.fromMasterSeed(seedBuffer)
-const acct = walletEth.derivePath(`m/44'/60'/0'/0/0`)
-const end = Date.now();
+// const begin = Date.now();
+// const seedBuffer = bip39.mnemonicToSeedSync("")
+// const walletEth = hdkey.fromMasterSeed(seedBuffer)
+// const acct = walletEth.derivePath(`m/44'/60'/0'/0/0`)
+// const end = Date.now();
+// console.log(acct.getWallet().getPrivateKeyString())
+
 // console.log(acct.getWallet().getPrivateKeyString(),"privateKey cost:",end-begin);
 
 //0xdcf96f66f03ed0b89ed67ac92bc9161bd94956d37c4675a8907785927d1b44b0
@@ -42,6 +44,10 @@ const end = Date.now();
 //0x55ef03585da36f54542e6ec447190b86bc90b7d113a5f34d8d55acd33ee00414
 
 // 055EF03585DA36F54542E6EC447190B86BC90B7D113A5F34D8D55ACD33EE0041 TERi9GYDModHHXCSsk33A3hBBTcLF5ZMjm BV7wNYXaNvVFQubsRHGQuGvJC30ROl802NVazTPuAEE=
-
+const phrase = ""
+const seedBuffer = bip39.mnemonicToSeedSync(phrase)
+const walletEth = hdkey.fromMasterSeed(seedBuffer)
+const acct = walletEth.derivePath(`m/44'/195'/0'/0/0`)
+console.log("acct.getWallet().getPrivateKeyString()::",acct.getWallet().getPrivateKeyString())
 
 

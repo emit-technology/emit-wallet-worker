@@ -11,7 +11,7 @@ class Index {
         const that = this;
         this.callbackHandler = new Map<number, any>();
         this.messageId = 0;
-        worker = new Worker('../lib/service.js', {type: 'module'});
+        worker = new Worker('../src/service.js', {type: 'module'});
         worker.onmessage = function (event: any) {
             if (event) {
                 const msg = event.data;
@@ -28,7 +28,7 @@ class Index {
         if (cb) {
             const msgId = this.messageId++;
             message.messageId = msgId;
-            // console.log("message>>", message);
+            console.log("message>>", message);
             worker.postMessage(message);
             this.callbackHandler.set(msgId, cb)
         }

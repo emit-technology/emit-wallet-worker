@@ -243,10 +243,12 @@ class Service {
                     };
                     resolve(true)
                 }).catch((e:any)=>{
-                    const err = typeof e == "string"?e:e.message;
-                    if(err == "task has closed"){
+                    const code = e.code;
+                    const message = typeof e == "string"?e:e.message;
+                    if(code == -3){
                         this.stop(this.temp.accountScenes)
                     }
+                    console.log(`subWork err:[${message}]`)
                     this.temp.timestamp = Date.now()
                     this.temp.nonce = random(0, 2 ** 64).toString()
                     this.temp.hashrate = {
@@ -254,7 +256,7 @@ class Service {
                         t:Date.now(),
                         o:0
                     };
-                    reject(e)
+                    reject(message)
                 })
             })
         }
@@ -294,25 +296,25 @@ class Service {
         const ne: any = this.calcNE(this.temp.hashseed, buf);
         if (new BigNumber(this.temp.ne).comparedTo(new BigNumber(ne)) == -1) {
             console.log(`index=[${this.temp.index}], nonce=[${this.temp.nonce}], ne=[${ne}]`)
-            const rest: any = await mintCollections.find({accountScenes: this.temp.accountScenes});
-            if (rest && rest.length > 0) {
-                this.temp.ne = ne;
-                const d: MintData = rest[0];
-                //must db ne < current ne
-                if (new BigNumber(d.ne).comparedTo(new BigNumber(ne)) == -1) {
-                    d.ne = ne;
-                    d.nonce = nonce;
-                    d.timestamp = Date.now();
-                    await mintCollections.update(d)
-                }
-            } else {
-                this.temp.ne = ne;
-                this.temp.timestamp = Date.now();
-                await mintCollections.insert(this.temp)
-            }
             try{
                 if(this.temp.minNE && new BigNumber(this.temp.minNE).comparedTo(new BigNumber(ne)) < 1){
                     await this.subWork(ne,nonce)
+                }
+                this.temp.ne = ne;
+                const rest: any = await mintCollections.find({accountScenes: this.temp.accountScenes});
+                if (rest && rest.length > 0) {
+                    const d: MintData = rest[0];
+                    //must db ne < current ne
+                    if (new BigNumber(d.ne).comparedTo(new BigNumber(ne)) == -1) {
+                        d.ne = ne;
+                        d.nonce = nonce;
+                        d.timestamp = Date.now();
+                        await mintCollections.update(d)
+                    }
+                } else {
+                    this.temp.nonce = nonce;
+                    this.temp.timestamp = Date.now();
+                    await mintCollections.insert(this.temp)
                 }
             }catch (e){
                 console.error(e)

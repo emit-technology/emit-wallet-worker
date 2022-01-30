@@ -16,7 +16,11 @@ class Rpc {
         return new Promise((resolve, reject) => {
             axios.post(host, data).then((resp: any) => {
                 if (resp.data.error) {
-                    reject(typeof resp.data.error === "string" ? resp.data.error : resp.data.error.message);
+                    if(resp.data.error && resp.data.error.code){
+                        reject(resp.data.error)
+                    }else{
+                        reject(typeof resp.data.error === "string" ? resp.data.error : resp.data.error.message);
+                    }
                 } else {
                     resolve(resp.data.result);
                 }
