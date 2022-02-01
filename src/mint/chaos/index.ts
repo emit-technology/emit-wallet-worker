@@ -2,7 +2,7 @@ import Mint from "../index";
 import {Message} from "../../types";
 
 const callbackHandler: Map<number, Function> = new Map<number, Function>()
-const worker = new Worker("../../../lib/mint/chaos/service.js", {name: `mint-worker-chaos`, type: 'module'});
+const worker = new Worker("./service.js", {name: `mint-worker-chaos`, type: 'module'});
 
 worker.onmessage = function (event: any) {
     if (event) {
