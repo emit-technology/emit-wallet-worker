@@ -471,4 +471,3 @@ function sendMessage(message) {
     self.postMessage(message);
 }
 exports.default = Service;
-//# sourceMappingURL=servicePool.js.map

@@ -391,4 +391,3 @@ function sendMessage(message) {
     self.postMessage(message);
 }
 exports.default = Service;
-//# sourceMappingURL=service.js.map

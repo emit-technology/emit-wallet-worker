@@ -31,4 +31,3 @@ var _db = new Index().initDatabase();
 exports.keyStoreCollection = new keystoreCollection_1.default(_db);
 exports.accountCollection = new accountCollection_1.default(_db);
 exports.mintCollections = new mintCollections_1.default(_db);
-//# sourceMappingURL=index.js.map

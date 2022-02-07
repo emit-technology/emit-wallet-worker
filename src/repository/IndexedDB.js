@@ -223,4 +223,3 @@ var IndexedDB = /** @class */ (function () {
     return IndexedDB;
 }());
 exports.IndexedDB = IndexedDB;
-//# sourceMappingURL=IndexedDB.js.map

@@ -65,4 +65,3 @@ exports.baseConfig = {
         ]
     }
 };
-//# sourceMappingURL=base.js.map

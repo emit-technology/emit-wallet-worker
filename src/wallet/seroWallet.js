@@ -169,4 +169,3 @@ var SeroWallet = /** @class */ (function (_super) {
     return SeroWallet;
 }(wallet_2.IWallet));
 exports.SeroWallet = SeroWallet;
-//# sourceMappingURL=seroWallet.js.map

@@ -658,4 +658,3 @@ function sendMessage(message) {
     // @ts-ignore
     self.postMessage(message);
 }
-//# sourceMappingURL=service.js.map

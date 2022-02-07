@@ -219,4 +219,3 @@ var IWallet = /** @class */ (function () {
     return IWallet;
 }());
 exports.IWallet = IWallet;
-//# sourceMappingURL=wallet.js.map

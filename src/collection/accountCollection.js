@@ -113,4 +113,3 @@ var AccountCollection = /** @class */ (function (_super) {
     return AccountCollection;
 }(base_1.default));
 exports.default = AccountCollection;
-//# sourceMappingURL=accountCollection.js.map

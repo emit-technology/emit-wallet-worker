@@ -29,4 +29,3 @@ var Mint = /** @class */ (function () {
 }());
 // const mint: Mint = new Mint();
 exports.default = Mint;
-//# sourceMappingURL=index.js.map

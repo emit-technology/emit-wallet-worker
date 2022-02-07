@@ -156,4 +156,3 @@ var EthWallet = /** @class */ (function (_super) {
     return EthWallet;
 }(wallet_1.IWallet));
 exports.default = EthWallet;
-//# sourceMappingURL=ethWallet.js.map

@@ -113,4 +113,3 @@ var MintCollections = /** @class */ (function (_super) {
     return MintCollections;
 }(base_1.default));
 exports.default = MintCollections;
-//# sourceMappingURL=mintCollections.js.map

@@ -6,4 +6,3 @@ self.addEventListener('message', function (e) {
     service.handle(e);
 });
 exports.default = service;
-//# sourceMappingURL=service.js.map

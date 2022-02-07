@@ -7,4 +7,3 @@ var config = {
     POOL_HOST: "https://node-pool.emit.technology",
 };
 exports.default = config;
-//# sourceMappingURL=index.js.map

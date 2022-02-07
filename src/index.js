@@ -91,4 +91,3 @@ var Index = /** @class */ (function () {
 }());
 var service = new Index();
 exports.default = service;
-//# sourceMappingURL=index.js.map

@@ -18,4 +18,3 @@ function Decrypt(ciphertext, pkey) {
     return { key: "" };
 }
 exports.Decrypt = Decrypt;
-//# sourceMappingURL=crypto.js.map

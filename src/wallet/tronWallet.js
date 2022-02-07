@@ -183,4 +183,3 @@ var TronWallet = /** @class */ (function (_super) {
     return TronWallet;
 }(wallet_1.IWallet));
 exports.default = TronWallet;
-//# sourceMappingURL=tronWallet.js.map

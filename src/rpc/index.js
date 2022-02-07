@@ -87,4 +87,3 @@ var Rpc = /** @class */ (function () {
 }());
 var rpc = new Rpc();
 exports.default = rpc;
-//# sourceMappingURL=index.js.map

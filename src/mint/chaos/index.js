@@ -45,4 +45,3 @@ var Miner = /** @class */ (function (_super) {
 }(index_1.default));
 var miner = new Miner();
 exports.default = miner;
-//# sourceMappingURL=index.js.map

@@ -37,4 +37,3 @@ var seedBuffer = bip39.mnemonicToSeedSync(phrase);
 var walletEth = ethereumjs_wallet_1.hdkey.fromMasterSeed(seedBuffer);
 var acct = walletEth.derivePath("m/44'/195'/0'/0/0");
 console.log("acct.getWallet().getPrivateKeyString()::", acct.getWallet().getPrivateKeyString());
-//# sourceMappingURL=wallet_test.js.map

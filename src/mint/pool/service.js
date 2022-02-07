@@ -41,4 +41,3 @@ self.addEventListener('message', function (e) {
     }
 });
 exports.default = services;
-//# sourceMappingURL=service.js.map

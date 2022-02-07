@@ -50,4 +50,3 @@ var MinerScenes;
     MinerScenes[MinerScenes["altar"] = 1] = "altar";
     MinerScenes[MinerScenes["chaos"] = 2] = "chaos";
 })(MinerScenes = exports.MinerScenes || (exports.MinerScenes = {}));
-//# sourceMappingURL=index.js.map
