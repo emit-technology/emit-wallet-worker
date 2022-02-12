@@ -1,5 +1,4 @@
 import {ChainType, Message, Method} from "./types";
-import { Worker } from 'worker_threads';
 let worker:any;
 
 class Index {

@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var types_1 = require("./types");
-var worker_threads_1 = require("worker_threads");
 var worker;
 var Index = /** @class */ (function () {
     function Index() {
@@ -10,7 +9,7 @@ var Index = /** @class */ (function () {
         this.messageId = 0;
         // @ts-ignore
         // worker = new Worker(new URL("../src/service.js", import.meta.url) );
-        worker = new worker_threads_1.Worker('../src/service.js', { type: 'module' });
+        worker = new Worker('../src/service.js', { type: 'module' });
         worker.onmessage = function (event) {
             if (event) {
                 var msg = event.data;
