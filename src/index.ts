@@ -1,6 +1,6 @@
 import {ChainType, Message, Method} from "./types";
-
-let worker;
+import { Worker } from 'worker_threads';
+let worker:any;
 
 class Index {
 
@@ -11,6 +11,8 @@ class Index {
         const that = this;
         this.callbackHandler = new Map<number, any>();
         this.messageId = 0;
+        // @ts-ignore
+        // worker = new Worker(new URL("../src/service.js", import.meta.url) );
         worker = new Worker('../src/service.js', {type: 'module'});
         worker.onmessage = function (event: any) {
             if (event) {
@@ -24,7 +26,7 @@ class Index {
         }
     }
 
-    handlerMsg(message: Message, cb: any) {
+    handlerMsg(message: Message, cb: Function) {
         if (cb) {
             const msgId = this.messageId++;
             message.messageId = msgId;
@@ -34,17 +36,17 @@ class Index {
         }
     }
 
-    importMnemonic(data: importMnemonicProps, cb: any) {
+    importMnemonic(data: importMnemonicProps, cb: Function) {
         let message: Message = {method: Method.importMnemonic, data: data}
         this.handlerMsg(message, cb);
     }
 
-    importPrivateKey(data: importMnemonicProps, cb: any) {
+    importPrivateKey(data: importMnemonicProps, cb: Function) {
         let message: Message = {method: Method.importPrivateKey, data: data}
         this.handlerMsg(message, cb);
     }
 
-    generateMnemonic(cb) {
+    generateMnemonic(cb:Function) {
         let message: Message = {method: Method.generateMnemonic, data: null}
         this.handlerMsg(message, cb);
     }
@@ -54,7 +56,7 @@ class Index {
         this.handlerMsg(message, cb);
     }
 
-    exportKeystore(accountId: string, cb: any) {
+    exportKeystore(accountId: string, cb: Function) {
         let message: Message = {method: Method.exportKeystore, data: {accountId: accountId}}
         this.handlerMsg(message, cb);
     }
@@ -64,17 +66,17 @@ class Index {
         this.handlerMsg(message, cb);
     }
 
-    accounts(cb: any) {
+    accounts(cb: Function) {
         let message: Message = {method: Method.getAccountList, data: null}
         this.handlerMsg(message, cb);
     }
 
-    accountInfo(accountId: string, cb) {
+    accountInfo(accountId: string, cb:Function) {
         let message: Message = {method: Method.getAccountInfo, data: {accountId: accountId}}
         this.handlerMsg(message, cb);
     }
 
-    signTx(accountId: string, password: string, chainType: ChainType, params: any,chainParams:any, cb: any) {
+    signTx(accountId: string, password: string, chainType: ChainType, params: any,chainParams:any, cb: Function) {
         let message: Message = {
             method: Method.signTx,
             data: {accountId: accountId, password: password, chainType: chainType, params: params,chainParams:chainParams}
@@ -82,27 +84,27 @@ class Index {
         this.handlerMsg(message, cb);
     }
 
-    execute(method: string, data: any, cb) {
+    execute(method: string, data: any, cb:Function) {
         let message: any = {method: method, data: data}
         this.handlerMsg(message, cb);
     }
 
-    genNewWallet(data: any, cb) {
+    genNewWallet(data: any, cb:Function) {
         let message: any = {method: Method.genNewWallet, data: data}
         this.handlerMsg(message, cb);
     }
 
-    unlockWallet(accountId: string, password: string, cb:any){
+    unlockWallet(accountId: string, password: string, cb:Function){
         let message: any = {method: Method.unlockWallet, data: {accountId: accountId, password: password}}
         this.handlerMsg(message, cb);
     }
 
-    isLocked(cb){
+    isLocked(cb:Function){
         let message: any = {method: Method.isLocked, data: {}}
         this.handlerMsg(message, cb);
     }
 
-    lockWallet(cb){
+    lockWallet(cb:Function){
         let message: any = {method: Method.lockWallet, data: {}}
         this.handlerMsg(message, cb);
     }

@@ -4,6 +4,7 @@
     "target": "es5",
     "sourceMap": false,
     "allowJs": true,
+    "strict": false,
     "lib": [
       "es2018",
       "dom"

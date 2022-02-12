@@ -8,7 +8,7 @@ import {IWallet, walletEx} from "./wallet/wallet";
 import Wallet from "ethereumjs-wallet";
 import {toBuffer} from "jsuperzk/src/utils/utils";
 import TronWallet from "./wallet/tronWallet";
-import {getBase58CheckAddress, genPriKey,hexStr2byteArray, getAddressFromPriKey} from "tron-lib/src/utils/crypto"
+import {getBase58CheckAddress, getAddressFromPriKey} from "tron-lib/src/utils/crypto"
 
 const uuidv4 = require("uuid/v4");
 const randomBytes = require("randombytes");
