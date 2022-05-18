@@ -1,6 +1,6 @@
 import {IWallet, walletEx} from "./wallet";
 import {Keystore, TxParams} from "../types";
-import utils, {toBuffer} from "jsuperzk/src/utils/utils";
+import utils, {toBuffer} from "jsuperzk/dist/utils/utils";
 import {hdkey,thirdparty} from 'ethereumjs-wallet';
 
 import Wallet from 'ethereumjs-wallet';

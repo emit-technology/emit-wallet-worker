@@ -2,7 +2,7 @@
   "name": "emit-wallet-worker",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/index.ts",
+  "main": "./lib/index.js",
   "dependencies": {
     "crypto-js": "^4.0.0",
     "jsuperzk": "file:../jsuperzk",

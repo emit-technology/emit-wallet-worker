@@ -4,7 +4,7 @@ import EthWallet from './ethWallet'
 import {Keystore} from "../types";
 import Wallet, {hdkey} from 'ethereumjs-wallet'
 import * as superzk from "jsuperzk/dist/protocol/account";
-import {createPkrHash,createOldPkrHash} from 'jsuperzk/src/wallet/wallet'
+import {createPkrHash,createOldPkrHash} from 'jsuperzk/dist/wallet/wallet'
 
 const bip39 = require("bip39");
 

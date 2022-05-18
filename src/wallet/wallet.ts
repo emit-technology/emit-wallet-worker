@@ -1,5 +1,5 @@
 import {AccountModel, ChainType, Keystore, KeystoreParams, ScryptKDFParamsOut, TxParams} from '../types';
-import {toBuffer} from "jsuperzk/src/utils/utils";
+import {toBuffer} from "jsuperzk/dist/utils/utils";
 import * as crypto from "crypto";
 import Wallet from "ethereumjs-wallet";
 import {accountCollection} from "../collection";
