@@ -10,6 +10,7 @@
     "tronweb": "^3.2.3"
   },
   "devDependencies": {
+    "assert": "^2.0.0",
     "axios": "^0.21.1",
     "bip39": "^3.0.3",
     "browserify": "^17.0.0",

@@ -5,8 +5,9 @@ import {hdkey,thirdparty} from 'ethereumjs-wallet';
 import Wallet from 'ethereumjs-wallet';
 
 import {getBase58CheckAddress, genPriKey,hexStr2byteArray, getAddressFromPriKey} from "tron-lib/src/utils/crypto"
-import {toBuffer} from "jsuperzk/dist/utils/utils";
+// import {toBuffer} from "jsuperzk/dist/utils/utils";
 import {walletEx} from "./wallet";
+import {toBuffer} from "jsuperzk/dist/utils/utils";
 
 const EthereumTx = require('ethereumjs-tx').Transaction
 const bip39 = require("bip39");

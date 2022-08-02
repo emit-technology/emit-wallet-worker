@@ -12,7 +12,7 @@ class Index {
         this.messageId = 0;
         // @ts-ignore
         // worker = new Worker(new URL("../src/service.js", import.meta.url) );
-        worker = new Worker('../src/service.js', {type: 'module'});
+        worker = new Worker('./service.js', {type: 'module'});
         worker.onmessage = function (event: any) {
             if (event) {
                 const msg = event.data;

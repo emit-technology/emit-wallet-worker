@@ -6,7 +6,7 @@ import * as superzk from "jsuperzk/dist/protocol/account";
 import {createPkrHash} from 'jsuperzk/dist/wallet/wallet'
 import {IWallet, walletEx} from "./wallet/wallet";
 import Wallet from "ethereumjs-wallet";
-import {toBuffer} from "jsuperzk/src/utils/utils";
+import {toBuffer} from "jsuperzk/dist/utils/utils";
 import TronWallet from "./wallet/tronWallet";
 import {getBase58CheckAddress, getAddressFromPriKey} from "tron-lib/src/utils/crypto"
 
